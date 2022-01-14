@@ -38,6 +38,7 @@ add_subdirectory(sine)
 add_subdirectory(bmi_sine)
 add_subdirectory(serialization)
 add_subdirectory(serialization_tests)
+add_subdirectory(serialization_test_c)
 #add_subdirectory(examples)
 
 include(CTest)

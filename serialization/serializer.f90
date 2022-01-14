@@ -1,7 +1,11 @@
 module serialization
-  use bmif_2_0
+
   use, intrinsic :: iso_c_binding, only: c_ptr, c_loc, c_f_pointer
+  use bmif_2_0
+
   implicit none
+  integer, parameter :: SER_MAX_FILE_NAME = 2048
+
   private
   public :: serializer
   type, abstract :: serializer

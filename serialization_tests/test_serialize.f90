@@ -31,12 +31,12 @@ program test_serialize
 
   status = m1%get_component_name(name)
 
-  write(*,*) name
+  write(*,*) 'Component name: ', trim(name)
 
   status = m1%initialize(config_file)
   status = m2%initialize(config_file)
 
-  call s%calling_c_test(testint, serialize_file1, serialize_file)
+  !call s%calling_c_test(testint, serialize_file1, serialize_file)
 
   status = m1%get_start_time( start_time ) 
   status = m1%get_end_time( end_time ) 
@@ -46,23 +46,36 @@ program test_serialize
      status = m1%get_current_time(current_time)
   end do
 
+  write(*,*) 'Before serialize: comparing two models ...'
+  status = s%compare(m1, m2) 
+  if ( status .ne. BMI_SUCCESS ) then
+     write(*,*) 'model1 and model2 are not equal!' 
+  else
+     write(*,*) 'model1 and model2 are equal!' 
+  end if
+
   status = s%serialize( m1, serialize_file )
 
   status = s%deserialize( m2, serialize_file )
 
+  write(*,*) 'Pause and then update two models ...'
   do while (current_time <= end_time)
      status = m1%update()
      status = m1%get_current_time(current_time)
   end do
   current_time = pause_time
+
   do while (current_time <= end_time)
      status = m2%update()
      status = m2%get_current_time(current_time)
   end do
 
   status = s%compare(m1, m2) 
-
+ 
+  write(*,*) 'After serialize/descrialize: comparing two models ...'
   if ( status .ne. BMI_SUCCESS ) then
-     stop BMI_FAILURE
+     write(*,*) 'model1 and model2 are not equal!' 
+  else
+     write(*,*) 'model1 and model2 are equal!' 
   end if
 end program test_serialize

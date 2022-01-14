@@ -1053,4 +1053,83 @@ contains
     call print_info(this%model)
   end subroutine print_model_info
 
+  function bmi_factory(this) result(bmi_status) bind(C, name="bmi_factory")
+    use, intrinsic:: iso_c_binding, only: c_ptr, c_loc, c_int
+    implicit none
+    type(c_ptr) :: this ! If not value, then from the C perspective `this` is a void**
+    type(bmi_sine), pointer :: bmi_model
+    integer(kind=c_int) :: bmi_status
+    allocate(bmi_sine::bmi_model)
+    if( .not. associated( bmi_model ) ) then
+      bmi_status = BMI_FAILURE
+    else
+      this = c_loc(bmi_model)
+      bmi_status = BMI_SUCCESS
+    endif
+  end function bmi_factory
+
+  function bmi_destroy(this) result(bmi_status) bind(C, name="bmi_destroy")
+    use, intrinsic:: iso_c_binding, only: c_ptr, c_loc, c_int
+    implicit none
+    type(c_ptr) :: this ! If not value, then from the C perspective `this` is a void**
+    type(bmi_sine), pointer :: bmi_model
+    integer(kind=c_int) :: bmi_status
+
+    call c_f_pointer(this, bmi_model)
+
+    if( .not. associated( bmi_model ) ) then
+      bmi_status = BMI_FAILURE
+    else
+      deallocate( bmi_model )
+      bmi_status = BMI_SUCCESS
+    endif
+  end function bmi_destroy
+
+  function create_box(this, bmi_ptr) result(bmi_status) bind(C, name="c_create_box")
+   use, intrinsic:: iso_c_binding, only: c_ptr, c_loc, c_int
+   use iso_c_bmif_2_0
+   implicit none
+   type(c_ptr), intent(out) :: this ! If not value, then from the C perspective `this` is a void**
+   type(c_ptr), intent(in) :: bmi_ptr ! If not value, then from the C perspective `this` is a void**
+   integer(kind=c_int) :: bmi_status
+   !Create the model instance to use
+   type(bmi_sine), pointer :: f_bmi_ptr
+   !Create a simple pointer wrapper
+   type(box), pointer :: bmi_box
+
+   !allocate the pointer box
+   allocate(bmi_box)
+
+   call c_f_pointer( bmi_ptr, f_bmi_ptr)
+   !associate the wrapper pointer the created model instance
+   bmi_box%ptr => f_bmi_ptr
+
+   if( .not. associated( bmi_box ) .or. .not. associated( bmi_box%ptr ) ) then
+    bmi_status = BMI_FAILURE
+   else
+    !Return the pointer to box
+    this = c_loc(bmi_box)
+    bmi_status = BMI_SUCCESS
+   endif
+ end function create_box
+
+  function delete_box(this) result(bmi_status) bind(C, name="c_delete_box")
+   use, intrinsic:: iso_c_binding, only: c_ptr, c_loc, c_int
+   use iso_c_bmif_2_0
+   implicit none
+   type(c_ptr), intent(in) :: this ! If not value, then from the C perspective `this` is a void**
+   type(box), pointer :: f_this
+   integer(kind=c_int) :: bmi_status
+   !Create a simple pointer wrapper
+
+   call c_f_pointer( this, f_this)
+
+   if( .not. associated( f_this ) ) then
+    bmi_status = BMI_FAILURE
+   else
+    deallocate( f_this ) 
+    bmi_status = BMI_SUCCESS
+   endif
+ end function delete_box
+
 end module bmisinef
