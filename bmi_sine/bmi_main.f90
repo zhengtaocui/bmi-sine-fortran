@@ -6,7 +6,7 @@ program bmi_main
   implicit none
 
   character (len=*), parameter :: output_file = "bmisinef.out"
-  character (len=*), parameter :: var_name = "sine_value_of_radian"
+  character (len=*), parameter :: var_name = "sine2d"
   integer, parameter :: ndims = 0
 
   type (bmi_sine) :: model
@@ -36,16 +36,17 @@ program bmi_main
 
   s = model%get_current_time(current_time)
   s = model%get_end_time(end_time)
+  s = model%get_var_length( var_name, grid_size )
 !  s = model%get_var_grid(var_name, grid_id)
 !  s = model%get_grid_size(grid_id, grid_size)
 !  s = model%get_grid_shape(grid_id, grid_shape)
 
-  allocate(sine(1))
+  allocate(sine(grid_size))
 
-  do while (current_time <= end_time)
+  do while (current_time <= end_time )
      write(file_unit,"(a, f6.3)") "Model values at time = ", current_time
      s = model%get_value(var_name, sine)
-     write (file_unit,"(f6.4)", advance="no") sine(1)
+     write (file_unit,"(f15.4)", advance="no") sine
      write (file_unit,*)
      s = model%update()
      s = model%get_current_time(current_time)

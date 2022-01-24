@@ -5,7 +5,7 @@ module bmisinef
   use, intrinsic :: iso_c_binding, only: c_ptr, c_loc, c_f_pointer
   implicit none
 
-  integer, parameter :: STATE_VAR_NAME_COUNT = 3 
+  integer, parameter :: STATE_VAR_NAME_COUNT = 12 
 
   type :: variable
      integer :: index
@@ -61,10 +61,12 @@ module bmisinef
      procedure :: get_value_int => sine_get_int
      procedure :: get_value_float => sine_get_float
      procedure :: get_value_double => sine_get_double
+     procedure :: get_value_string => sine_get_string
      generic :: get_value => &
           get_value_int, &
           get_value_float, &
-          get_value_double
+          get_value_double, &
+          get_value_string
      procedure :: get_value_ptr_int => sine_get_ptr_int
      procedure :: get_value_ptr_float => sine_get_ptr_float
      procedure :: get_value_ptr_double => sine_get_ptr_double
@@ -82,10 +84,12 @@ module bmisinef
      procedure :: set_value_int => sine_set_int
      procedure :: set_value_float => sine_set_float
      procedure :: set_value_double => sine_set_double
+     procedure :: set_value_string => sine_set_string
      generic :: set_value => &
           set_value_int, &
           set_value_float, &
-          set_value_double
+          set_value_double, &
+          set_value_string
      procedure :: set_value_at_indices_int => sine_set_at_indices_int
      procedure :: set_value_at_indices_float => sine_set_at_indices_float
      procedure :: set_value_at_indices_double => sine_set_at_indices_double
@@ -113,27 +117,54 @@ module bmisinef
        component_name = "The Sine Equation"
 
   ! Exchange items
-  integer, parameter :: input_item_count = 2
-  integer, parameter :: output_item_count = 1
-  integer, parameter :: all_item_count = 3
+  integer, parameter :: input_item_count = 7
+  integer, parameter :: output_item_count = 5
+  integer, parameter :: all_item_count = 12 
   character (len=BMI_MAX_VAR_NAME), target, &
        dimension(input_item_count) :: input_items
   character (len=BMI_MAX_VAR_NAME), target, &
-       dimension(output_item_count) :: &
-       output_items = (/'sine_value_of_radian'/)
+       dimension(output_item_count) :: output_items
   character (len=BMI_MAX_VAR_NAME), target, &
           dimension(all_item_count) :: all_items
 
-  type(variable), parameter, dimension(3) :: &
-          var_info = (/variable(1, 'Radian', 'real', 1, &
+  type(variable), dimension(12) :: &
+          var_info = (/variable(1, 't', 'real', 1, &
                                 'no_set', 'DIMENSIONLESS', &
-                                'node', 0 ),                &
-                      variable(2, 'plate_surface__thermal_diffusivity', 'real', 1, &
+                                'node', 0 ),               &
+                      variable(2, 'alpha', 'real', 1, &
                                 'no_set', 'm^2/s', &
                                 'node', 0 ),                &
-                      variable(3, 'sine_value_of_radian', 'real', 1, &
+                      variable(3, 'dt', 'real', 1, &
                                 'no_set', 'DIMENSIONLESS', &
-                                'node', 0 )/)
+                                'node', 0 ),               &
+                      variable(4, 't_end', 'real', 1, &
+                                'no_set', 'DIMENSIONLESS', &
+                                'node', 0 ),               &
+                      variable(5, 'n_x', 'integer', 1, &
+                                'no_set', 'DIMENSIONLESS', &
+                                'node', 0 ),               &
+                      variable(6, 'n_y', 'integer', 1, &
+                                'no_set', 'DIMENSIONLESS', &
+                                'node', 0 ),               &
+                      variable(7, 'id', 'integer', 1, &
+                                'no_set', 'DIMENSIONLESS', &
+                                'node', 0 ),               &
+                      variable(8, 'sinevalue', 'real', 1, &
+                                'no_set', 'DIMENSIONLESS', &
+                                'node', 0 ),               &
+                      variable(9, 'sinevalue_tmp', 'real*8', 1, &
+                                'no_set', 'DIMENSIONLESS', &
+                                'node', 1 ),               &
+                      variable(10, 'sine2d', 'real', 1, &
+                                'no_set', 'DIMENSIONLESS', &
+                                'node', 2 ),               &
+                      variable(11, 'sine2d_ptr', 'real*8', 1, &
+                                'no_set', 'DIMENSIONLESS', &
+                                'node', 2 ),               &
+                      variable(12, 'description', 'character', &
+                                  MAX_STRING_LENGTH, &
+                                'no_set', 'DIMENSIONLESS', &
+                                'node', 1 ) /)
   
 contains
 
@@ -172,10 +203,13 @@ contains
     class (bmi_sine), intent(in) :: this
     character (*), pointer, intent(out) :: names(:)
     integer :: bmi_status
-
-    input_items(1) = 'Radian'
-    input_items(2) = 'plate_surface__thermal_diffusivity'
-
+    input_items(1) = 'id'
+    input_items(2) = 'alpha'
+    input_items(3) = 't'
+    input_items(4) = 't_end'
+    input_items(5) = 'dt'
+    input_items(6) = 'n_x'
+    input_items(7) = 'n_y'
     names => input_items
     bmi_status = BMI_SUCCESS
   end function sine_input_var_names
@@ -186,6 +220,11 @@ contains
     character (*), pointer, intent(out) :: names(:)
     integer :: bmi_status
 
+    output_items(1) = 'sinevalue'
+    output_items(2) = 'sinevalue_tmp'
+    output_items(3) = 'sine2d'
+    output_items(4) = 'sine2d_ptr'
+    output_items(5) = 'description'
     names => output_items
     bmi_status = BMI_SUCCESS
   end function sine_output_var_names
@@ -201,6 +240,14 @@ contains
     else
        call initialize_from_defaults(this%model)
     end if
+
+    !sinevalue_tmp
+    var_info(9)%size =  this%model%n_x
+    !sine2d
+    var_info(10)%size =  this%model%n_x * this%model%n_y
+    !sine2d_ptr
+    var_info(11)%size =  this%model%n_x * this%model%n_y
+
     bmi_status = BMI_SUCCESS
   end function sine_initialize
 
@@ -302,15 +349,18 @@ contains
     integer :: bmi_status
 
     select case(name)
-    case('Radian')
-       grid = 0
+    case('sine2d')
+       grid = 2
        bmi_status = BMI_SUCCESS
-    case('model__identification_number')
+    case('sine2d_ptr')
+       grid = 2
+       bmi_status = BMI_SUCCESS
+    case('sinevalue_tmp')
        grid = 1
        bmi_status = BMI_SUCCESS
     case default
-       grid = -1
-       bmi_status = BMI_FAILURE
+       grid = 0
+       bmi_status = BMI_SUCCESS
     end select
   end function sine_var_grid
 
@@ -323,10 +373,13 @@ contains
 
     select case(grid)
     case(0)
-       type = "uniform_rectilinear"
+       type = "scalar"
        bmi_status = BMI_SUCCESS
     case(1)
-       type = "scalar"
+       type = "1d"
+       bmi_status = BMI_SUCCESS
+    case(2)
+       type = "2d"
        bmi_status = BMI_SUCCESS
     case default
        type = "-"
@@ -343,10 +396,13 @@ contains
 
     select case(grid)
     case(0)
-       rank = 2
+       rank = 0
        bmi_status = BMI_SUCCESS
     case(1)
-       rank = 0
+       rank = 1
+       bmi_status = BMI_SUCCESS
+    case(2)
+       rank = 2
        bmi_status = BMI_SUCCESS
     case default
        rank = -1
@@ -362,8 +418,11 @@ contains
     integer :: bmi_status
 
     select case(grid)
-    case(0)
-       shape(:) = [1, 1]
+    case(1)
+       shape(:) = [this%model%n_x]
+       bmi_status = BMI_SUCCESS
+    case(2)
+       shape(:) = [this%model%n_y, this%model%n_x]
        bmi_status = BMI_SUCCESS
     case default
        shape(:) = -1
@@ -383,7 +442,10 @@ contains
        size = 1
        bmi_status = BMI_SUCCESS
     case(1)
-       size = 1
+       size = this%model%n_x
+       bmi_status = BMI_SUCCESS
+    case(2)
+       size = this%model%n_x * this%model%n_y
        bmi_status = BMI_SUCCESS
     case default
        size = -1
@@ -399,7 +461,10 @@ contains
     integer :: bmi_status
 
     select case(grid)
-    case(0)
+    case(1)
+       spacing(:) = [1]
+       bmi_status = BMI_SUCCESS
+    case(2)
        spacing(:) = [1,1]
        bmi_status = BMI_SUCCESS
     case default
@@ -416,7 +481,10 @@ contains
     integer :: bmi_status
 
     select case(grid)
-    case(0)
+    case(1)
+       origin(:) = [0.d0]
+       bmi_status = BMI_SUCCESS
+    case(2)
        origin(:) = [0.d0, 0.d0]
        bmi_status = BMI_SUCCESS
     case default
@@ -436,6 +504,9 @@ contains
     case(1)
        x(:) = [0.d0]
        bmi_status = BMI_SUCCESS
+    case(2)
+       x(:) = [0.d0, 0.d0]
+       bmi_status = BMI_SUCCESS
     case default
        x(:) = -1.d0
        bmi_status = BMI_FAILURE
@@ -452,6 +523,9 @@ contains
     select case(grid)
     case(1)
        y(:) = [0.d0]
+       bmi_status = BMI_SUCCESS
+    case(2)
+       y(:) = [0.d0, 0.d0]
        bmi_status = BMI_SUCCESS
     case default
        y(:) = -1.d0
@@ -470,6 +544,9 @@ contains
     case(1)
        z(:) = [0.d0]
        bmi_status = BMI_SUCCESS
+    case(2)
+       z(:) = [0.d0]
+       bmi_status = BMI_SUCCESS
     case default
        z(:) = -1.d0
        bmi_status = BMI_FAILURE
@@ -484,7 +561,7 @@ contains
     integer :: bmi_status
 
     select case(grid)
-    case(0:1)
+    case(1:2)
        bmi_status = this%get_grid_size(grid, count)
     case default
        count = -1
@@ -563,25 +640,17 @@ contains
     class (bmi_sine), intent(in) :: this
     character (len=*), intent(in) :: name
     character (len=*), intent(out) :: type
-    integer :: bmi_status
+    integer :: bmi_status, n
 
-    select case(name)
-    case("Radian")
-       type = "real"
-       bmi_status = BMI_SUCCESS
-    case("sine_value_of_radian")
-       type = "real"
-       bmi_status = BMI_SUCCESS
-    case("plate_surface__thermal_diffusivity")
-       type = "real"
-       bmi_status = BMI_SUCCESS
-    case("model__identification_number")
-       type = "integer"
-       bmi_status = BMI_SUCCESS
-    case default
-       type = "-"
-       bmi_status = BMI_FAILURE
-    end select
+    do n = 1, STATE_VAR_NAME_COUNT
+      if( var_info(n)%name == name ) then
+           type = var_info(n)%type
+           bmi_status = BMI_SUCCESS
+           return 
+      end if 
+    end do
+    type = '-'
+    bmi_status = BMI_FAILURE
   end function sine_var_type
 
   ! The units of the given variable.
@@ -592,10 +661,10 @@ contains
     integer :: bmi_status
 
     select case(name)
-    case("plate_surface__temperature")
+    case("id")
        units = "NA"
        bmi_status = BMI_SUCCESS
-    case("model__identification_number")
+    case("alpha")
        units = "1"
        bmi_status = BMI_SUCCESS
     case default
@@ -612,11 +681,41 @@ contains
     integer :: bmi_status
 
     select case(name)
-    case("Radian")
+    case("id")
+       size = sizeof(this%model%id)  ! 'sizeof' in gcc & ifort
+       bmi_status = BMI_SUCCESS
+    case("n_x")
+       size = sizeof(this%model%n_x)  ! 'sizeof' in gcc & ifort
+       bmi_status = BMI_SUCCESS
+    case("n_y")
+       size = sizeof(this%model%n_y)  ! 'sizeof' in gcc & ifort
+       bmi_status = BMI_SUCCESS
+    case("sinevalue")
        size = sizeof(this%model%sinevalue)  ! 'sizeof' in gcc & ifort
        bmi_status = BMI_SUCCESS
-    case("model__identification_number")
-       size = sizeof(this%model%id)                ! 'sizeof' in gcc & ifort
+    case("description")
+       size = sizeof(this%model%description)
+       bmi_status = BMI_SUCCESS
+    case("t")
+       size = sizeof(this%model%t)
+       bmi_status = BMI_SUCCESS
+    case("dt")
+       size = sizeof(this%model%dt)
+       bmi_status = BMI_SUCCESS
+    case("t_end")
+       size = sizeof(this%model%t_end)
+       bmi_status = BMI_SUCCESS
+    case("alpha")
+       size = sizeof(this%model%alpha)
+       bmi_status = BMI_SUCCESS
+    case("sinevalue_tmp")
+       size = sizeof(this%model%sinevalue_tmp(1))
+       bmi_status = BMI_SUCCESS
+    case("sine2d")
+       size = sizeof(this%model%sine2d(1,1))
+       bmi_status = BMI_SUCCESS
+    case("sine2d_ptr")
+       size = sizeof(this%model%sine2d_ptr(1,1))
        bmi_status = BMI_SUCCESS
     case default
        size = -1
@@ -667,8 +766,14 @@ contains
     integer :: bmi_status
 
     select case(name)
-    case("model__identification_number")
+    case("id")
        dest = [this%model%id]
+       bmi_status = BMI_SUCCESS
+    case("n_x")
+       dest = [this%model%n_x]
+       bmi_status = BMI_SUCCESS
+    case("n_y")
+       dest = [this%model%n_y]
        bmi_status = BMI_SUCCESS
     case default
        dest(:) = -1
@@ -684,24 +789,23 @@ contains
     integer :: bmi_status
 
     select case(name)
-    case("Radian")
-       ! This would be safe, but subject to indexing errors.
-       ! do j = 1, this%model%n_y
-       !    do i = 1, this%model%n_x
-       !       k = j + this%model%n_y*(i-1)
-       !       dest(k) = this%model%temperature(j,i)
-       !    end do
-       ! end do
-
-       ! This is an equivalent, elementwise copy into `dest`.
-       ! See https://stackoverflow.com/a/11800068/1563298
-       dest = [this%model%t]
-       bmi_status = BMI_SUCCESS
-    case("sine_value_of_radian")
+    case("sinevalue")
        dest = [this%model%sinevalue]
        bmi_status = BMI_SUCCESS
-    case("plate_surface__thermal_diffusivity")
+    case("t")
+       dest = [this%model%t]
+       bmi_status = BMI_SUCCESS
+    case("dt")
+       dest = [this%model%dt]
+       bmi_status = BMI_SUCCESS
+    case("t_end")
+       dest = [this%model%t_end]
+       bmi_status = BMI_SUCCESS
+    case("alpha")
        dest = [this%model%alpha]
+       bmi_status = BMI_SUCCESS
+    case("sine2d")
+       dest = reshape(this%model%sine2d, [size(this%model%sine2d)])
        bmi_status = BMI_SUCCESS
     case default
        dest(:) = -1.0
@@ -717,11 +821,33 @@ contains
     integer :: bmi_status
 
     select case(name)
+    case("sinevalue_tmp")
+       dest = this%model%sinevalue_tmp
+       bmi_status = BMI_SUCCESS
+    case("sine2d_ptr")
+       dest = reshape(this%model%sine2d_ptr, [size(this%model%sine2d_ptr)])
+       bmi_status = BMI_SUCCESS
     case default
        dest(:) = -1.d0
        bmi_status = BMI_FAILURE
     end select
   end function sine_get_double
+
+  function sine_get_string(this, name, dest) result (bmi_status)
+    class (bmi_sine), intent(in) :: this
+    character (len=*), intent(in) :: name
+    character (len=*), intent(inout) :: dest
+    integer :: bmi_status
+
+    select case(name)
+    case("description")
+       dest = this%model%description
+       bmi_status = BMI_SUCCESS
+    case default
+       dest = '-'
+       bmi_status = BMI_FAILURE
+    end select
+  end function sine_get_string
 
   ! Get a reference to an integer-valued variable, flattened.
   function sine_get_ptr_int(this, name, dest_ptr) result (bmi_status)
@@ -830,8 +956,14 @@ contains
     integer :: bmi_status
 
     select case(name)
-    case("model__identification_number")
+    case("id")
        this%model%id = src(1)
+       bmi_status = BMI_SUCCESS
+    case("n_x")
+       this%model%n_x = src(1)
+       bmi_status = BMI_SUCCESS
+    case("n_y")
+       this%model%n_y = src(1)
        bmi_status = BMI_SUCCESS
     case default
        bmi_status = BMI_FAILURE
@@ -846,24 +978,23 @@ contains
     integer :: bmi_status
 
     select case(name)
-    case("Radian")
-       ! This would be safe, but subject to indexing errors.
-       ! do j = 1, this%model%n_y
-       !    do i = 1, this%model%n_x
-       !       k = j + this%model%n_y*(i-1)
-       !       dest(k) = this%model%temperature(j,i)
-       !    end do
-       ! end do
-
-       ! This is an equivalent, elementwise copy into `dest`.
-       ! See https://stackoverflow.com/a/11800068/1563298
-       this%model%t = src(1)
-       bmi_status = BMI_SUCCESS
-    case("sine_value_of_radian")
+    case("sinevalue")
        this%model%sinevalue = src(1)
        bmi_status = BMI_SUCCESS
-    case("plate_surface__thermal_diffusivity")
+    case("t")
+       this%model%t = src(1)
+       bmi_status = BMI_SUCCESS
+    case("dt")
+       this%model%dt = src(1)
+       bmi_status = BMI_SUCCESS
+    case("t_end")
+       this%model%t_end = src(1)
+       bmi_status = BMI_SUCCESS
+    case("alpha")
        this%model%alpha = src(1)
+       bmi_status = BMI_SUCCESS
+    case("sine2d")
+       this%model%sine2d = reshape( src, [this%model%n_y, this%model%n_x] )
        bmi_status = BMI_SUCCESS
     case default
        bmi_status = BMI_FAILURE
@@ -878,10 +1009,31 @@ contains
     integer :: bmi_status
 
     select case(name)
+    case("sinevalue_tmp")
+       this%model%sinevalue_tmp = src
+       bmi_status = BMI_SUCCESS
+    case("sine2d_ptr")
+       this%model%sine2d_ptr = reshape(src, [this%model%n_y, this%model%n_x])
+       bmi_status = BMI_SUCCESS
     case default
        bmi_status = BMI_FAILURE
     end select
   end function sine_set_double
+
+  function sine_set_string(this, name, src) result (bmi_status)
+    class (bmi_sine), intent(inout) :: this
+    character (len=*), intent(in) :: name
+    character (len=*), intent(in) :: src
+    integer :: bmi_status
+
+    select case(name)
+    case("description")
+       this%model%description = src
+       bmi_status = BMI_SUCCESS
+    case default
+       bmi_status = BMI_FAILURE
+    end select
+  end function sine_set_string
 
   ! Set integer values at particular locations.
   function sine_set_at_indices_int(this, name, inds, src) &

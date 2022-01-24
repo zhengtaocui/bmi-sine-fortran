@@ -7,7 +7,7 @@
 #include "ut_trim.h"
 
 int c_serialize( char** names, int* cl, char** types, int* typelength, 
-		int* namecount, char** cptr2, char* ser_file)
+		int* namecount, int* var_size, char** cptr2, char* ser_file)
 {
     char** cnames = (char**)NULL;
     char** ctypes = (char**)NULL;
@@ -35,36 +35,59 @@ int c_serialize( char** names, int* cl, char** types, int* typelength,
       cnames[0][ end - 1] = '\0'; 
       cnames[i] = &cnames[0][ i * *cl];
       ut_trim( cnames[i] );
-      //printf( "inside c_serialize: end = %d \n", end );
-      //printf( "inside c_serialize: %s \n", cnames[i] );
+//      printf( "inside c_serialize: end = %d \n", end );
+//      printf( "inside c_serialize: %s \n", cnames[i] );
       end = (i + 1) * (*typelength);
       strcpy( ctypes[0], types[0] ); 
       ctypes[0][ end - 1] = '\0'; 
       ctypes[i] = &ctypes[0][ i * *typelength];
       ut_trim( ctypes[i] );
-      //printf( "inside c_serialize: type end = %d \n", end );
-      //printf( "inside c_serialize type =  %s \n", ctypes[i] );
+//      printf( "inside c_serialize: type end = %d \n", end );
+//      printf( "inside c_serialize type =  %s \n", ctypes[i] );
       //printf( "inside c_serialize %f \n", *(float*)(float**)cptr2[i]);
-      if (strcmp(ctypes[i], "real") == 0 )
+//      printf( "inside c_serialize: var_size = %d \n", var_size[i]);
+      if (strcmp(ctypes[i], "real") == 0 || strcmp(ctypes[i], "real*4") == 0
+	  || strcmp(ctypes[i], "float") == 0 )
       {
-          for ( int j = 0; j < 1; ++j )
+          for ( int j = 0; j < var_size[i]; ++j )
 	  {
-             msgpack_pack_float(&pk, *(float*)(((float**)cptr2)[i]));
+             msgpack_pack_float(&pk, *(float*)(float**)(cptr2[i]
+				                     + j * sizeof(float)));
+//             printf( "inside c_serialize: %s float = %f \n", cnames[i],
+//	           *(float*)(float**)(cptr2[i] + j * sizeof(float)) );
 	  }
       }
-      else if ( strcmp(ctypes[i], "int") ==  0 )
+      else if ( strcmp(ctypes[i], "integer") ==  0 || 
+		                     strcmp(ctypes[i], "integer*4") ==  0 )
       {
-          for ( int j = 0; j < 1; ++j )
+          for ( int j = 0; j < var_size[i]; ++j )
 	  {
-             msgpack_pack_int(&pk, *(int*)(((int**)cptr2)[i]));
+             msgpack_pack_int(&pk, *(int*)(int**)(cptr2[i]
+				                + j * sizeof(int)));
+//             printf( "inside c_serialize: %s int = %d \n", cnames[i],
+//	           *(int*)(int**)(cptr2[i] + j * sizeof(float)) );
 	  }
       }
-      else if ( strcmp(ctypes[i], "double") ==  0 )
+      else if ( strcmp(ctypes[i], "double") ==  0 || 
+		                     strcmp(ctypes[i], "real*8") ==  0 )
       {
-          for ( int j = 0; j < 1; ++j )
+          for ( int j = 0; j < var_size[i]; ++j )
 	  {
-             msgpack_pack_double(&pk, *(double*)(((double**)cptr2)[i]));
+//             printf( "inside c_serialize: %s double = %f \n", cnames[i],
+//	           *(double*)(double**)(cptr2[i] + j * sizeof(double)) );
+             msgpack_pack_double(&pk, *(double*)(double**)(cptr2[i]
+				                + j * sizeof(double)));
 	  }
+      }
+      else if ( strcmp(ctypes[i], "character") ==  0 || 
+		                     strcmp(ctypes[i], "string") ==  0 )
+      {
+          cptr2[i][ var_size[i] - 1] = '\0';
+//          printf( "inside c_serialize: %s string = %s \n", cnames[i],
+//	           (char*)(cptr2[i]) );
+          msgpack_pack_str(&pk, var_size[i] - 1 );
+	  //remove trailing null char
+          msgpack_pack_str_body(&pk, cptr2[i], var_size[i] - 1 );
       }
       else
       {

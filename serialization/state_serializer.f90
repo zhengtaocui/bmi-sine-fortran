@@ -10,13 +10,17 @@ module state_serialization
      real, allocatable :: elements(:) 
   end type realarray
 
-  type :: doublearray
-     real*8, allocatable :: elements(:) 
-  end type doublearray
-
   type :: intarray
      integer, allocatable :: elements(:) 
   end type intarray
+
+  type :: real8array
+     real*8, allocatable :: elements(:) 
+  end type real8array
+
+  type :: strarray
+     character (len=:), allocatable :: elements
+  end type strarray
 
   type, extends(serializer) :: state_serializer
      contains
@@ -28,11 +32,13 @@ module state_serialization
   end type state_serializer
   
   interface
-     function f_c_serialize( names, length, types, typelength,  count, cptr2, ser_file) &
+     function f_c_serialize( names, length, types, typelength,  count, &
+                     var_sizes, cptr2, ser_file) &
                     result( result ) bind(C, name="c_serialize")      
        use, intrinsic :: iso_c_binding
        type(c_ptr), dimension(:), intent(in) :: names
        type(c_ptr), dimension(:), intent(in) :: types
+       type(c_ptr), value, intent(in) :: var_sizes
        integer(c_int), intent(in) :: length
        integer(c_int), intent(in) :: typelength
        integer(c_int), intent(in) :: count
@@ -42,11 +48,13 @@ module state_serialization
 
     end function f_c_serialize
 
-    function f_c_deserialize( names, length, types, typelength,  count, cptr2, ser_file) &
+    function f_c_deserialize( names, length, types, typelength,  count, &
+                    var_sizes, cptr2, ser_file) &
                     result( result ) bind(C, name="c_deserialize")      
        use, intrinsic :: iso_c_binding
        type(c_ptr), dimension(:), intent(in) :: names
        type(c_ptr), dimension(:), intent(in) :: types
+       type(c_ptr), value, intent(in) :: var_sizes
        integer(c_int), intent(in) :: length
        integer(c_int), intent(in) :: typelength
        integer(c_int), intent(in) :: count
@@ -79,34 +87,43 @@ contains
             character(kind=c_char), dimension(len(ser_file)+1), target :: c_ser_file
             integer :: bmi_status
             type(realarray), dimension(:), allocatable, target :: realtemp
+            type(real8array), dimension(:), allocatable, target :: real8temp
             type(intarray), dimension(:), allocatable, target :: inttemp
-            type(doublearray), dimension(:), allocatable, target :: doubletemp
+            type(strarray), dimension(:), allocatable, target :: strtemp
+
             character(len=BMI_MAX_VAR_NAME), pointer :: names(:)
             character(len=BMI_MAX_TYPE_NAME) :: type
             character(len=BMI_MAX_TYPE_NAME), pointer :: types(:)
-            integer :: n = 1, varcount, realcount, intcount, doublecount, &
-                    realidx, intidx, doubleidx
+            integer :: n = 1, varcount, realcount, intcount, real8count, &
+                    strcount, realidx, intidx, real8idx, stridx, &
+                    varlength
+            integer, dimension(:), allocatable, target :: lengths
+
             type( c_ptr ), allocatable, dimension(:), target :: temp
 
             bmi_status = model_in%get_var_count( 'all', varcount)
             bmi_status = model_in%get_var_names( 'all', names)
 
             allocate( types(varcount) )
+            allocate( lengths(varcount) )
             realcount = 0
+            real8count = 0
             intcount = 0
-            doublecount = 0
+            strcount = 0
             do n = 1, varcount
                bmi_status = model_in%get_var_type( names(n), type )  
                types(n) = type
                select case( type )
-               case( 'integer' )
+               case( 'integer', 'integer*4' )
                   intcount = intcount + 1
-               case( 'real' )
+               case( 'real','real*4','float' )
                   realcount = realcount + 1
-               case( 'double' )
-                  doublecount = doublecount + 1
+               case( 'real*8', 'double' )
+                  real8count = real8count + 1
+               case( 'character', 'string' )
+                  strcount = strcount + 1
                case default
-                       write(*,*) 'unknown type'
+                       write(*,*) 'unknown type: ', type
                end select  
             end do
 
@@ -114,43 +131,64 @@ contains
               allocate( realtemp(realcount) )
             end if
 
+            if ( real8count .gt. 0 ) then
+              allocate( real8temp(real8count) )
+            end if
+
             if ( intcount .gt. 0 ) then
               allocate( inttemp(intcount) )
             end if
 
-            if ( doublecount .gt. 0 ) then
-              allocate( doubletemp(doublecount) )
+            if ( strcount .gt. 0 ) then
+              allocate( strtemp(strcount) )
             end if
 
             allocate( temp(varcount) )
 
             realidx=0
+            real8idx=0
             intidx=0
-            doubleidx=0
-             
+            stridx=0 
             do n = 1, varcount
                bmi_status = model_in%get_var_type( names(n), type )  
+               bmi_status = model_in%get_var_length( names(n), varlength )  
+               lengths(n) = varlength
                select case( type )
-               case( 'integer' )
+               case( 'integer','integer*4' )
                   intidx = intidx + 1
-                  allocate( inttemp(intidx)%elements(1) )
+                  allocate( inttemp(intidx)%elements(varlength) )
                   bmi_status = model_in%get_value_int( names(n), &
                                                     inttemp(intidx)%elements)
+!                  write(*,*) 'int'
+!                  write(*,*) inttemp(intidx)%elements
                   temp(n) = c_loc(inttemp(intidx)%elements(1))
-               case( 'real' )
+               case( 'real','real*4','float' )
                   realidx = realidx + 1
-                  allocate( realtemp(realidx)%elements(1) )
+                  allocate( realtemp(realidx)%elements(varlength) )
                   bmi_status = model_in%get_value_float( names(n), &
                                         realtemp(realidx)%elements)
+!                  write(*,*) 'float'
+!                  write(*,*) realtemp(realidx)%elements
                   temp(n) = c_loc(realtemp(realidx)%elements(1))
-               case( 'double' )
-                  doubleidx = doubleidx + 1
-                  allocate( doubletemp(doubleidx)%elements(1) )
+               case( 'real*8', 'double' )
+                  real8idx = real8idx + 1
+                  allocate( real8temp(real8idx)%elements(varlength) )
                   bmi_status = model_in%get_value_double( names(n), &
-                          doubletemp(doubleidx)%elements)
-                  temp(n) = c_loc(doubletemp(doubleidx)%elements(1))
+                                        real8temp(real8idx)%elements)
+!                  write(*,*) 'double'
+!                  write(*,*) real8temp(real8idx)%elements
+                  temp(n) = c_loc(real8temp(real8idx)%elements(1))
+               case( 'character', 'string' )
+                  stridx = stridx + 1
+                  allocate(  &
+                       character(len=varlength) :: strtemp(stridx)%elements )
+                  bmi_status = model_in%get_value_string( names(n), &
+                                        strtemp(stridx)%elements)
+!                  write(*,*) 'string'
+!                  write(*,*) trim( strtemp(stridx)%elements)
+                  temp(n) = c_loc(strtemp(stridx)%elements)
                case default
-                       write(*,*) 'unknown type'
+                       write(*,*) 'unknown type: ', type
                end select  
             end do
 
@@ -162,13 +200,21 @@ contains
 
             bmi_status = f_c_serialize( c_loc( names ), BMI_MAX_VAR_NAME, &
                                         c_loc( types ), BMI_MAX_TYPE_NAME, &
-                                varcount, c_loc(temp), c_loc( c_ser_file ) )
+                                varcount, c_loc(lengths), &
+                                c_loc(temp), c_loc( c_ser_file ) )
 
             if ( realcount .gt. 0 ) then
               do n = 1, realcount
                 deallocate( realtemp(n)%elements ) 
               end do
               deallocate( realtemp )
+            endif 
+
+            if ( real8count .gt. 0 ) then
+              do n = 1, real8count
+                deallocate( real8temp(n)%elements ) 
+              end do
+              deallocate( real8temp )
             endif 
 
             if ( intcount .gt. 0 ) then
@@ -178,15 +224,16 @@ contains
               deallocate( inttemp )
             endif 
 
-            if ( doublecount .gt. 0 ) then
-              do n = 1, doublecount
-                 deallocate( doubletemp(n)%elements ) 
+            if ( strcount .gt. 0 ) then
+              do n = 1, strcount
+                deallocate( strtemp(n)%elements ) 
               end do
-              deallocate( doubletemp )
+              deallocate( strtemp )
             endif 
 
             deallocate( temp ) 
             deallocate( types ) 
+            deallocate( lengths ) 
 
             bmi_status = BMI_SUCCESS
      end function serialize_states
@@ -200,35 +247,42 @@ contains
             character(kind=c_char), dimension(len(ser_file)+1), target :: c_ser_file
             integer :: bmi_status
             type(realarray), dimension(:), allocatable, target :: realtemp
+            type(real8array), dimension(:), allocatable, target :: real8temp
             type(intarray), dimension(:), allocatable, target :: inttemp
-            type(doublearray), dimension(:), allocatable, target :: doubletemp
+            type(strarray), dimension(:), allocatable, target :: strtemp
+
             character(len=BMI_MAX_VAR_NAME), pointer :: names(:)
             character(len=BMI_MAX_TYPE_NAME) :: type
             character(len=BMI_MAX_TYPE_NAME), pointer :: types(:)
-            integer :: n = 1, varcount, realcount, intcount, doublecount, &
-                    realidx, intidx, doubleidx
+            integer :: n = 1, varcount, realcount, intcount, real8count, &
+                    strcount, realidx, intidx, real8idx, stridx, &
+                    varlength
+            integer, dimension(:), allocatable, target :: lengths
             type( c_ptr ), allocatable, dimension(:), target :: temp
 
             bmi_status = model_out%get_var_count( 'all', varcount)
             bmi_status = model_out%get_var_names( 'all', names)
 
             allocate( types(varcount) )
-            !count types
+            allocate( lengths(varcount) )
             realcount = 0
+            real8count = 0
             intcount = 0
-            doublecount = 0
+            strcount = 0
             do n = 1, varcount
                bmi_status = model_out%get_var_type( names(n), type )  
                types(n) = type
                select case( type )
-               case( 'integer' )
+               case( 'integer', 'integer*4' )
                   intcount = intcount + 1
-               case( 'real' )
+               case( 'real','real*4','float' )
                   realcount = realcount + 1
-               case( 'double' )
-                  doublecount = doublecount + 1
+               case( 'real*8','double' )
+                  real8count = real8count + 1
+               case( 'character', 'string' )
+                  strcount = strcount + 1
                case default
-                       write(*,*) 'unknown type'
+                       write(*,*) 'unknown type: ', type
                end select  
             end do
 
@@ -236,37 +290,48 @@ contains
               allocate( realtemp(realcount) )
             end if
 
+            if ( real8count .gt. 0 ) then
+              allocate( real8temp(real8count) )
+            end if
+
             if ( intcount .gt. 0 ) then
               allocate( inttemp(intcount) )
             end if
 
-            if ( doublecount .gt. 0 ) then
-              allocate( doubletemp(doublecount) )
+            if ( strcount .gt. 0 ) then
+              allocate( strtemp(strcount) )
             end if
 
             allocate( temp(varcount) )
 
             realidx=0
+            real8idx=0
             intidx=0
-            doubleidx=0
-             
+            stridx=0 
             do n = 1, varcount
                bmi_status = model_out%get_var_type( names(n), type )  
+               bmi_status = model_out%get_var_length( names(n), varlength )  
+               lengths(n)=varlength
                select case( type )
-               case( 'integer' )
+               case( 'integer','integer*4' )
                   intidx = intidx + 1
-                  allocate( inttemp(intidx)%elements(1) )
+                  allocate( inttemp(intidx)%elements(varlength) )
                   temp(n) = c_loc(inttemp(intidx)%elements(1))
-               case( 'real' )
+               case( 'real','real*4','float' )
                   realidx = realidx + 1
-                  allocate( realtemp(realidx)%elements(1) )
+                  allocate( realtemp(realidx)%elements(varlength) )
                   temp(n) = c_loc(realtemp(realidx)%elements(1))
-               case( 'double' )
-                  doubleidx = doubleidx + 1
-                  allocate( doubletemp(doubleidx)%elements(1) )
-                  temp(n) = c_loc(doubletemp(doubleidx)%elements(1))
+               case( 'real*8', 'double' )
+                  real8idx = real8idx + 1
+                  allocate( real8temp(real8idx)%elements(varlength) )
+                  temp(n) = c_loc(real8temp(real8idx)%elements(1))
+               case( 'character', 'string' )
+                  stridx = stridx + 1
+                  allocate(  &
+                       character(len=varlength) :: strtemp(stridx)%elements )
+                  temp(n) = c_loc(strtemp(stridx)%elements)
                case default
-                       write(*,*) 'unknown type'
+                       write(*,*) 'unknown type: ', type
                end select  
             end do
 
@@ -278,27 +343,35 @@ contains
 
             bmi_status = f_c_deserialize( c_loc( names ), BMI_MAX_VAR_NAME, &
                                         c_loc( types ), BMI_MAX_TYPE_NAME, &
-                                varcount, c_loc(temp), c_loc( c_ser_file ) )
+                                varcount, c_loc(lengths), &
+                                c_loc(temp), c_loc( c_ser_file ) )
 
             realidx=0
             intidx=0
-            doubleidx=0
+            real8idx=0
+            stridx=0
             do n = 1, varcount
                bmi_status = model_out%get_var_type( names(n), type )  
                select case( type )
-               case( 'integer' )
+               case( 'integer','integer*4' )
+                  intidx = intidx + 1
                   bmi_status = model_out%set_value_int( names(n), &
                                          inttemp(intidx)%elements )  
-               case( 'real' )
+               case( 'real','real*4','float' )
                   realidx = realidx + 1
                   bmi_status = model_out%set_value_float( names(n), &
                                          realtemp(realidx)%elements )  
-               case( 'double' )
-                  doubleidx = doubleidx + 1
+               case( 'real*8','double' )
+                  real8idx = real8idx + 1
                   bmi_status = model_out%set_value_double( names(n), &
-                                        doubletemp(doubleidx)%elements )  
+                                        real8temp(real8idx)%elements )  
+               case( 'character','string' )
+                  stridx = stridx + 1
+!                  write(*,*) "F deserizalize:", trim(strtemp(stridx)%elements)
+                  bmi_status = model_out%set_value_string( names(n), &
+                                        strtemp(stridx)%elements )  
                case default
-                       write(*,*) 'unknown type'
+                       write(*,*) 'unknown type: ', type
                end select  
             end do
 
@@ -309,6 +382,13 @@ contains
               deallocate( realtemp )
             endif 
 
+            if ( real8count .gt. 0 ) then
+              do n = 1, real8count
+                deallocate( real8temp(n)%elements ) 
+              end do
+              deallocate( real8temp )
+            endif 
+
             if ( intcount .gt. 0 ) then
               do n = 1, intcount
                 deallocate( inttemp(n)%elements ) 
@@ -316,15 +396,16 @@ contains
               deallocate( inttemp )
             endif 
 
-            if ( doublecount .gt. 0 ) then
-              do n = 1, doublecount
-                 deallocate( doubletemp(n)%elements ) 
+            if ( strcount .gt. 0 ) then
+              do n = 1, strcount
+                deallocate( strtemp(n)%elements ) 
               end do
-              deallocate( doubletemp )
+              deallocate( strtemp )
             endif 
 
             deallocate( temp ) 
             deallocate( types ) 
+            deallocate( lengths ) 
             bmi_status = BMI_SUCCESS
      end function deserialize_states
 
@@ -334,9 +415,10 @@ contains
             class(bmi), intent(in) :: model1
             class(bmi), intent(in) :: model2
             integer :: bmi_status
-            real, dimension(1) :: realtemp1, realtemp2
-            integer, dimension(1) :: inttemp1, inttemp2
-            real*8, dimension(1) :: doubletemp1, doubletemp2
+            real, dimension(:), allocatable :: realtemp1, realtemp2
+            integer, dimension(:), allocatable :: inttemp1, inttemp2
+            real*8, dimension(:), allocatable :: doubletemp1, doubletemp2
+            character (len=:), allocatable :: strtemp1, strtemp2
             character(len=BMI_MAX_VAR_NAME), pointer :: names(:)
             character(len=BMI_MAX_TYPE_NAME) :: typename
             integer :: n = 1, varcount, length1, length2, i
@@ -355,8 +437,10 @@ contains
                   exit
                end if
                select case( typename )
-               case( 'integer' )
-                  write(*,*) 'integer'
+               case( 'integer','integer*4' )
+!                  write(*,*) 'integer'
+                  allocate( inttemp1( length1 ) )
+                  allocate( inttemp2( length2 ) )
                   bmi_status = model1%get_value_int( names(n), inttemp1 )  
                   bmi_status = model2%get_value_int( names(n), inttemp2 )  
 
@@ -368,7 +452,11 @@ contains
                         return
                      end if  
                   end do
-               case( 'real' )
+                  deallocate( inttemp1 )
+                  deallocate( inttemp2 )
+               case( 'real','real*4','float' )
+                  allocate( realtemp1( length1 ) )
+                  allocate( realtemp2( length2 ) )
                   bmi_status = model1%get_value_float( names(n), realtemp1 )  
                   bmi_status = model2%get_value_float( names(n), realtemp2 )  
                   do i = 1, length1
@@ -379,10 +467,14 @@ contains
                         return
                      end if  
                   end do
-               case( 'double' )
-                  bmi_status = model1%get_value_double( names(n), doubletemp1 )  
-                  bmi_status = model2%get_value_double( names(n), doubletemp2 )  
+                  deallocate( realtemp1 )
+                  deallocate( realtemp2 )
 
+               case( 'real*8', 'double' )
+                  allocate( doubletemp1( length1 ) )
+                  allocate( doubletemp2( length2 ) )
+                  bmi_status = model1%get_value_double( names(n), doubletemp1 ) 
+                  bmi_status = model2%get_value_double( names(n), doubletemp2 )  
                   do i = 1, length1
                      if ( doubletemp1(i) .ne. doubletemp2(i) ) then
                         write(*, *) 'varaibale ', trim(names(n)), ' is not equal!' 
@@ -391,6 +483,25 @@ contains
                         return
                      end if  
                   end do
+                  deallocate( doubletemp1 )
+                  deallocate( doubletemp2 )
+
+               case( 'character' )
+                   allocate( character(len=length1) :: strtemp1 )
+                   allocate( character(len=length2) :: strtemp2 )
+                   bmi_status = model1%get_value_string( names(n), strtemp1 ) 
+                   bmi_status = model2%get_value_string( names(n), strtemp2 )  
+
+                   if ( strtemp1 .ne. strtemp2 ) then
+                        write(*, *) 'varaibale ', trim(names(n)), &
+                                                       ' is not equal!' 
+                        bmi_status = BMI_FAILURE 
+                        return
+                   end if  
+
+                   deallocate( strtemp1 )
+                   deallocate( strtemp2 )
+
                case default
                        write(*,*) 'unknown type'
                        bmi_status = BMI_FAILURE 
