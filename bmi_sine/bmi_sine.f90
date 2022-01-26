@@ -59,14 +59,22 @@ module bmisinef
      procedure :: get_var_nbytes => sine_var_nbytes
      procedure :: get_var_location => sine_var_location
      procedure :: get_value_int => sine_get_int
+     procedure :: get_value_int1 => sine_get_int1
+     procedure :: get_value_int2 => sine_get_int2
+     procedure :: get_value_int8 => sine_get_int8
      procedure :: get_value_float => sine_get_float
      procedure :: get_value_double => sine_get_double
      procedure :: get_value_string => sine_get_string
+     procedure :: get_value_logical => sine_get_logical
      generic :: get_value => &
           get_value_int, &
+          get_value_int1, &
+          get_value_int2, &
+          get_value_int8, &
           get_value_float, &
           get_value_double, &
-          get_value_string
+          get_value_string, &
+          get_value_logical
      procedure :: get_value_ptr_int => sine_get_ptr_int
      procedure :: get_value_ptr_float => sine_get_ptr_float
      procedure :: get_value_ptr_double => sine_get_ptr_double
@@ -82,14 +90,22 @@ module bmisinef
           get_value_at_indices_float, &
           get_value_at_indices_double
      procedure :: set_value_int => sine_set_int
+     procedure :: set_value_int1 => sine_set_int1
+     procedure :: set_value_int2 => sine_set_int2
+     procedure :: set_value_int8 => sine_set_int8
      procedure :: set_value_float => sine_set_float
      procedure :: set_value_double => sine_set_double
      procedure :: set_value_string => sine_set_string
+     procedure :: set_value_logical => sine_set_logical
      generic :: set_value => &
           set_value_int, &
+          set_value_int1, &
+          set_value_int2, &
+          set_value_int8, &
           set_value_float, &
           set_value_double, &
-          set_value_string
+          set_value_string, &
+          set_value_logical
      procedure :: set_value_at_indices_int => sine_set_at_indices_int
      procedure :: set_value_at_indices_float => sine_set_at_indices_float
      procedure :: set_value_at_indices_double => sine_set_at_indices_double
@@ -167,6 +183,36 @@ module bmisinef
                                 'node', 1 ) /)
   
 contains
+
+  function get_type_and_kind( var ) result ( typeandkind )
+      class(*), intent(in) :: var
+      character(len=BMI_MAX_TYPE_NAME) :: typeandkind
+      
+      select type (var )
+        type is ( integer(kind=1) )  
+           typeandkind='integer1'
+        type is ( integer(kind=2) )  
+           typeandkind='integer2'
+        type is ( integer(kind=4) )  
+           typeandkind='integer4'
+        type is ( integer(kind=8) )  
+           typeandkind='integer8'
+        type is ( real(kind=4) )  
+           typeandkind='real4'
+        type is ( real(kind=8) )  
+           typeandkind='real8'
+     !https://stackoverflow.com/questions/27392400/fortran-type-is-character
+        type is ( character(*) )  
+           typeandkind='character'
+!        type is ( character(kind=4) )  
+!           typeandkind='character4'
+        type is ( logical )  
+           typeandkind='logical'
+        class default
+           typeandkind='unknown'
+
+        end select
+  end function get_type_and_kind
 
   ! Get the name of the model.
   function sine_component_name(this, name) result (bmi_status)
@@ -247,6 +293,19 @@ contains
     var_info(10)%size =  this%model%n_x * this%model%n_y
     !sine2d_ptr
     var_info(11)%size =  this%model%n_x * this%model%n_y
+
+    var_info(1)%type = get_type_and_kind( this%model%t )
+    var_info(2)%type = get_type_and_kind( this%model%alpha )
+    var_info(3)%type = get_type_and_kind( this%model%dt )
+    var_info(4)%type = get_type_and_kind( this%model%t_end )
+    var_info(5)%type = get_type_and_kind( this%model%n_x )
+    var_info(6)%type = get_type_and_kind( this%model%n_y )
+    var_info(7)%type = get_type_and_kind( this%model%id )
+    var_info(8)%type = get_type_and_kind( this%model%sinevalue )
+    var_info(9)%type = get_type_and_kind( this%model%sinevalue_tmp(1) )
+    var_info(10)%type = get_type_and_kind( this%model%sine2d(1,1) )
+    var_info(11)%type = get_type_and_kind( this%model%sine2d_ptr(1,1) )
+    var_info(12)%type = get_type_and_kind( this%model%description )
 
     bmi_status = BMI_SUCCESS
   end function sine_initialize
@@ -781,6 +840,45 @@ contains
     end select
   end function sine_get_int
 
+  function sine_get_int1(this, name, dest) result (bmi_status)
+    class (bmi_sine), intent(in) :: this
+    character (len=*), intent(in) :: name
+    integer(kind=1), intent(inout) :: dest(:)
+    integer :: bmi_status
+
+    select case(name)
+    case default
+       dest(:) = -1
+       bmi_status = BMI_FAILURE
+    end select
+  end function sine_get_int1
+
+  function sine_get_int2(this, name, dest) result (bmi_status)
+    class (bmi_sine), intent(in) :: this
+    character (len=*), intent(in) :: name
+    integer(kind=2), intent(inout) :: dest(:)
+    integer :: bmi_status
+
+    select case(name)
+    case default
+       dest(:) = -1
+       bmi_status = BMI_FAILURE
+    end select
+  end function sine_get_int2
+
+  function sine_get_int8(this, name, dest) result (bmi_status)
+    class (bmi_sine), intent(in) :: this
+    character (len=*), intent(in) :: name
+    integer(kind=8), intent(inout) :: dest(:)
+    integer :: bmi_status
+
+    select case(name)
+    case default
+       dest(:) = -1
+       bmi_status = BMI_FAILURE
+    end select
+  end function sine_get_int8
+
   ! Get a copy of a real variable's values, flattened.
   function sine_get_float(this, name, dest) result (bmi_status)
     class (bmi_sine), intent(in) :: this
@@ -849,16 +947,39 @@ contains
     end select
   end function sine_get_string
 
+  function sine_get_logical(this, name, dest) result (bmi_status)
+    class (bmi_sine), intent(in) :: this
+    character (len=*), intent(in) :: name
+    logical, intent(inout) :: dest(:)
+    integer :: bmi_status
+
+    select case(name)
+    case default
+       dest(:) = .false.
+       bmi_status = BMI_FAILURE
+    end select
+  end function sine_get_logical
+
   ! Get a reference to an integer-valued variable, flattened.
   function sine_get_ptr_int(this, name, dest_ptr) result (bmi_status)
     class (bmi_sine), intent(in) :: this
     character (len=*), intent(in) :: name
     integer, pointer, intent(inout) :: dest_ptr(:)
+    !integer, pointer, intent(inout) :: dest_ptr
     integer :: bmi_status
     type (c_ptr) :: src
     integer :: n_elements
 
     select case(name)
+!    case("id")
+!       dest_ptr => [this%model%id]
+!       bmi_status = BMI_SUCCESS
+!    case("n_x")
+!       dest_ptr => [this%model%n_x]
+!       bmi_status = BMI_SUCCESS
+!    case("n_y")
+!       dest_ptr => [this%model%n_y]
+!       bmi_status = BMI_SUCCESS
     case default
        bmi_status = BMI_FAILURE
     end select
@@ -970,6 +1091,42 @@ contains
     end select
   end function sine_set_int
 
+  function sine_set_int1(this, name, src) result (bmi_status)
+    class (bmi_sine), intent(inout) :: this
+    character (len=*), intent(in) :: name
+    integer(kind=1), intent(in) :: src(:)
+    integer :: bmi_status
+
+    select case(name)
+    case default
+       bmi_status = BMI_FAILURE
+    end select
+  end function sine_set_int1
+
+  function sine_set_int2(this, name, src) result (bmi_status)
+    class (bmi_sine), intent(inout) :: this
+    character (len=*), intent(in) :: name
+    integer(kind=2), intent(in) :: src(:)
+    integer :: bmi_status
+
+    select case(name)
+    case default
+       bmi_status = BMI_FAILURE
+    end select
+  end function sine_set_int2
+
+  function sine_set_int8(this, name, src) result (bmi_status)
+    class (bmi_sine), intent(inout) :: this
+    character (len=*), intent(in) :: name
+    integer(kind=8), intent(in) :: src(:)
+    integer :: bmi_status
+
+    select case(name)
+    case default
+       bmi_status = BMI_FAILURE
+    end select
+  end function sine_set_int8
+
   ! Set new real values.
   function sine_set_float(this, name, src) result (bmi_status)
     class (bmi_sine), intent(inout) :: this
@@ -1034,6 +1191,18 @@ contains
        bmi_status = BMI_FAILURE
     end select
   end function sine_set_string
+
+  function sine_set_logical(this, name, src) result (bmi_status)
+    class (bmi_sine), intent(inout) :: this
+    character (len=*), intent(in) :: name
+    logical, intent(in) :: src(:)
+    integer :: bmi_status
+
+    select case(name)
+    case default
+       bmi_status = BMI_FAILURE
+    end select
+  end function sine_set_logical
 
   ! Set integer values at particular locations.
   function sine_set_at_indices_int(this, name, inds, src) &

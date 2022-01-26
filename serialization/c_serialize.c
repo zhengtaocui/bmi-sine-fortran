@@ -46,8 +46,7 @@ int c_serialize( char** names, int* cl, char** types, int* typelength,
 //      printf( "inside c_serialize type =  %s \n", ctypes[i] );
       //printf( "inside c_serialize %f \n", *(float*)(float**)cptr2[i]);
 //      printf( "inside c_serialize: var_size = %d \n", var_size[i]);
-      if (strcmp(ctypes[i], "real") == 0 || strcmp(ctypes[i], "real*4") == 0
-	  || strcmp(ctypes[i], "float") == 0 )
+      if (strcmp(ctypes[i], "real4") == 0 )
       {
           for ( int j = 0; j < var_size[i]; ++j )
 	  {
@@ -57,19 +56,7 @@ int c_serialize( char** names, int* cl, char** types, int* typelength,
 //	           *(float*)(float**)(cptr2[i] + j * sizeof(float)) );
 	  }
       }
-      else if ( strcmp(ctypes[i], "integer") ==  0 || 
-		                     strcmp(ctypes[i], "integer*4") ==  0 )
-      {
-          for ( int j = 0; j < var_size[i]; ++j )
-	  {
-             msgpack_pack_int(&pk, *(int*)(int**)(cptr2[i]
-				                + j * sizeof(int)));
-//             printf( "inside c_serialize: %s int = %d \n", cnames[i],
-//	           *(int*)(int**)(cptr2[i] + j * sizeof(float)) );
-	  }
-      }
-      else if ( strcmp(ctypes[i], "double") ==  0 || 
-		                     strcmp(ctypes[i], "real*8") ==  0 )
+      else if ( strcmp(ctypes[i], "real8") ==  0 )
       {
           for ( int j = 0; j < var_size[i]; ++j )
 	  {
@@ -79,8 +66,47 @@ int c_serialize( char** names, int* cl, char** types, int* typelength,
 				                + j * sizeof(double)));
 	  }
       }
-      else if ( strcmp(ctypes[i], "character") ==  0 || 
-		                     strcmp(ctypes[i], "string") ==  0 )
+      else if ( strcmp(ctypes[i], "integer4") ==  0 )
+      {
+          for ( int j = 0; j < var_size[i]; ++j )
+	  {
+             msgpack_pack_int(&pk, *(int*)(int**)(cptr2[i]
+				                + j * sizeof(int)));
+//             printf( "inside c_serialize: %s int = %d \n", cnames[i],
+//	           *(int*)(int**)(cptr2[i] + j * sizeof(float)) );
+	  }
+      }
+      else if ( strcmp(ctypes[i], "integer1") ==  0 )
+      {
+          for ( int j = 0; j < var_size[i]; ++j )
+	  {
+             msgpack_pack_int(&pk, *(signed char*)(signed char**)(cptr2[i]
+				                + j * sizeof(signed char)));
+//             printf( "inside c_serialize: %s int1 = %d \n", cnames[i],
+//	           *(signed char*)(signed char**)(cptr2[i] + j * sizeof(signed char)) );
+	  }
+      }
+      else if ( strcmp(ctypes[i], "integer2") ==  0 )
+      {
+          for ( int j = 0; j < var_size[i]; ++j )
+	  {
+             msgpack_pack_int(&pk, *(short*)(short**)(cptr2[i]
+				                + j * sizeof(short)));
+//             printf( "inside c_serialize: %s int2 = %d \n", cnames[i],
+//	           *(short*)(short**)(cptr2[i] + j * sizeof(short)) );
+	  }
+      }
+      else if ( strcmp(ctypes[i], "integer8") ==  0 )
+      {
+          for ( int j = 0; j < var_size[i]; ++j )
+	  {
+             msgpack_pack_int(&pk, *(long*)(long**)(cptr2[i]
+				                + j * sizeof(long)));
+//             printf( "inside c_serialize: %s int8 = %d \n", cnames[i],
+//	           *(long*)(long**)(cptr2[i] + j * sizeof(long)) );
+	  }
+      }
+      else if ( strcmp(ctypes[i], "character") ==  0 )
       {
           cptr2[i][ var_size[i] - 1] = '\0';
 //          printf( "inside c_serialize: %s string = %s \n", cnames[i],
@@ -88,6 +114,17 @@ int c_serialize( char** names, int* cl, char** types, int* typelength,
           msgpack_pack_str(&pk, var_size[i] - 1 );
 	  //remove trailing null char
           msgpack_pack_str_body(&pk, cptr2[i], var_size[i] - 1 );
+      }
+      else if ( strcmp(ctypes[i], "logical") ==  0 )
+      {
+          for ( int j = 0; j < var_size[i]; ++j )
+	  {
+             //for gcc and ifort, the default size for logical is 4 bytes.
+             msgpack_pack_int(&pk, *(int*)(int**)(cptr2[i]
+				                + j * sizeof(int)));
+             printf( "inside c_serialize: %s logical = %d \n", cnames[i],
+	           *(int*)(int**)(cptr2[i] + j * sizeof(int)) );
+	  }
       }
       else
       {
