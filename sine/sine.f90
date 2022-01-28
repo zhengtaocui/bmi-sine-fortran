@@ -25,6 +25,8 @@ module sinef
 
      character(len=MAX_STRING_LENGTH) :: description
 
+     logical, dimension(:), allocatable :: logvar(:)
+
   end type sine_model
 
   private :: initialize
@@ -66,12 +68,15 @@ contains
     allocate( model%sinevalue_tmp( model%n_x ) ) 
     allocate( model%sine2d( model%n_y, model%n_x ) ) 
     allocate( model%sine2d_ptr( model%n_y, model%n_x ) ) 
+    allocate( model%logvar( model%n_y ) ) 
 
     model%description = 'Model initialized!'
 
     model%sinevalue_tmp = 0.
     model%sine2d = 0.
     model%sine2d_ptr = 0.
+
+    model%logvar = .TRUE.
 
   end subroutine initialize
 
@@ -88,6 +93,10 @@ contains
 
     if ( allocated( model%sinevalue_tmp ) ) then
         deallocate(model%sinevalue_tmp)
+    end if
+
+    if ( allocated( model%logvar ) ) then
+        deallocate(model%logvar)
     end if
 
     return
@@ -115,6 +124,14 @@ contains
           model%sine2d_ptr(j, i) = model%sinevalue + i * 100. + j*1000.
        end do
     end do
+    do j = 1, model%n_y 
+      if ( modulo(j,2) .eq. 0 ) then 
+         model%logvar(j) = .FALSE.
+      else
+         model%logvar(j) = .TRUE.
+      end if
+    end do
+
   end subroutine advance_in_time
 
   ! A helper routine for displaying model parameters.
@@ -141,6 +158,9 @@ contains
     do j = 1, model%n_y
        write(*,rowfmt) (model%sine2d_ptr(j,i), i = 1, model%n_x)
     end do
+
+    write(*,"(a7)") "logvar:"
+    write(*,*) (model%logvar(i), i = 1, model%n_y)
 
   end subroutine print_info
 

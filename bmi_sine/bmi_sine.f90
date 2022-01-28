@@ -5,7 +5,7 @@ module bmisinef
   use, intrinsic :: iso_c_binding, only: c_ptr, c_loc, c_f_pointer
   implicit none
 
-  integer, parameter :: STATE_VAR_NAME_COUNT = 12 
+  integer, parameter :: STATE_VAR_NAME_COUNT = 13
 
   type :: variable
      integer :: index
@@ -134,8 +134,8 @@ module bmisinef
 
   ! Exchange items
   integer, parameter :: input_item_count = 7
-  integer, parameter :: output_item_count = 5
-  integer, parameter :: all_item_count = 12 
+  integer, parameter :: output_item_count = 6
+  integer, parameter :: all_item_count = STATE_VAR_NAME_COUNT
   character (len=BMI_MAX_VAR_NAME), target, &
        dimension(input_item_count) :: input_items
   character (len=BMI_MAX_VAR_NAME), target, &
@@ -143,7 +143,7 @@ module bmisinef
   character (len=BMI_MAX_VAR_NAME), target, &
           dimension(all_item_count) :: all_items
 
-  type(variable), dimension(12) :: &
+  type(variable), dimension(STATE_VAR_NAME_COUNT) :: &
           var_info = (/variable(1, 't', 'real', 1, &
                                 'no_set', 'DIMENSIONLESS', &
                                 'node', 0 ),               &
@@ -180,11 +180,21 @@ module bmisinef
                       variable(12, 'description', 'character', &
                                   MAX_STRING_LENGTH, &
                                 'no_set', 'DIMENSIONLESS', &
+                                'node', 1 ),               &
+                      variable(13, 'logvar', 'logical', &
+                                  1, &
+                                'no_set', 'DIMENSIONLESS', &
                                 'node', 1 ) /)
+
+      interface get_type_and_kind
+           module procedure get_type_and_kind_scalar
+           module procedure get_type_and_kind_array
+           module procedure get_type_and_kind_2darray
+      end interface get_type_and_kind
   
 contains
 
-  function get_type_and_kind( var ) result ( typeandkind )
+  function get_type_and_kind_scalar( var ) result ( typeandkind )
       class(*), intent(in) :: var
       character(len=BMI_MAX_TYPE_NAME) :: typeandkind
       
@@ -212,7 +222,65 @@ contains
            typeandkind='unknown'
 
         end select
-  end function get_type_and_kind
+  end function get_type_and_kind_scalar
+
+  function get_type_and_kind_array( var ) result ( typeandkind )
+      class(*), dimension(:), intent(in) :: var
+      character(len=BMI_MAX_TYPE_NAME) :: typeandkind
+      
+      select type (var )
+        type is ( integer(kind=1) )  
+           typeandkind='integer1'
+        type is ( integer(kind=2) )  
+           typeandkind='integer2'
+        type is ( integer(kind=4) )  
+           typeandkind='integer4'
+        type is ( integer(kind=8) )  
+           typeandkind='integer8'
+        type is ( real(kind=4) )  
+           typeandkind='real4'
+        type is ( real(kind=8) )  
+           typeandkind='real8'
+     !https://stackoverflow.com/questions/27392400/fortran-type-is-character
+        type is ( character(*) )  
+           typeandkind='character'
+!        type is ( character(kind=4) )  
+!           typeandkind='character4'
+        type is ( logical )  
+           typeandkind='logical'
+        class default
+           typeandkind='unknown'
+        end select
+  end function get_type_and_kind_array
+
+  function get_type_and_kind_2darray( var ) result ( typeandkind )
+      class(*), dimension(:,:), intent(in) :: var
+      character(len=BMI_MAX_TYPE_NAME) :: typeandkind
+      
+      select type (var )
+        type is ( integer(kind=1) )  
+           typeandkind='integer1'
+        type is ( integer(kind=2) )  
+           typeandkind='integer2'
+        type is ( integer(kind=4) )  
+           typeandkind='integer4'
+        type is ( integer(kind=8) )  
+           typeandkind='integer8'
+        type is ( real(kind=4) )  
+           typeandkind='real4'
+        type is ( real(kind=8) )  
+           typeandkind='real8'
+     !https://stackoverflow.com/questions/27392400/fortran-type-is-character
+        type is ( character(*) )  
+           typeandkind='character'
+!        type is ( character(kind=4) )  
+!           typeandkind='character4'
+        type is ( logical )  
+           typeandkind='logical'
+        class default
+           typeandkind='unknown'
+        end select
+  end function get_type_and_kind_2darray
 
   ! Get the name of the model.
   function sine_component_name(this, name) result (bmi_status)
@@ -271,6 +339,7 @@ contains
     output_items(3) = 'sine2d'
     output_items(4) = 'sine2d_ptr'
     output_items(5) = 'description'
+    output_items(6) = 'logvar'
     names => output_items
     bmi_status = BMI_SUCCESS
   end function sine_output_var_names
@@ -293,6 +362,7 @@ contains
     var_info(10)%size =  this%model%n_x * this%model%n_y
     !sine2d_ptr
     var_info(11)%size =  this%model%n_x * this%model%n_y
+    var_info(13)%size =  this%model%n_y
 
     var_info(1)%type = get_type_and_kind( this%model%t )
     var_info(2)%type = get_type_and_kind( this%model%alpha )
@@ -302,10 +372,11 @@ contains
     var_info(6)%type = get_type_and_kind( this%model%n_y )
     var_info(7)%type = get_type_and_kind( this%model%id )
     var_info(8)%type = get_type_and_kind( this%model%sinevalue )
-    var_info(9)%type = get_type_and_kind( this%model%sinevalue_tmp(1) )
-    var_info(10)%type = get_type_and_kind( this%model%sine2d(1,1) )
-    var_info(11)%type = get_type_and_kind( this%model%sine2d_ptr(1,1) )
+    var_info(9)%type = get_type_and_kind( this%model%sinevalue_tmp )
+    var_info(10)%type = get_type_and_kind( this%model%sine2d )
+    var_info(11)%type = get_type_and_kind( this%model%sine2d_ptr )
     var_info(12)%type = get_type_and_kind( this%model%description )
+    var_info(13)%type = get_type_and_kind( this%model%logvar )
 
     bmi_status = BMI_SUCCESS
   end function sine_initialize
@@ -415,6 +486,9 @@ contains
        grid = 2
        bmi_status = BMI_SUCCESS
     case('sinevalue_tmp')
+       grid = 1
+       bmi_status = BMI_SUCCESS
+    case('logvar')
        grid = 1
        bmi_status = BMI_SUCCESS
     case default
@@ -776,6 +850,9 @@ contains
     case("sine2d_ptr")
        size = sizeof(this%model%sine2d_ptr(1,1))
        bmi_status = BMI_SUCCESS
+    case("logvar")
+       size = sizeof(this%model%logvar(1))
+       bmi_status = BMI_SUCCESS
     case default
        size = -1
        bmi_status = BMI_FAILURE
@@ -954,6 +1031,9 @@ contains
     integer :: bmi_status
 
     select case(name)
+    case("logvar")
+       dest = this%model%logvar
+       bmi_status = BMI_SUCCESS
     case default
        dest(:) = .false.
        bmi_status = BMI_FAILURE
@@ -961,24 +1041,23 @@ contains
   end function sine_get_logical
 
   ! Get a reference to an integer-valued variable, flattened.
-  function sine_get_ptr_int(this, name, dest_ptr) result (bmi_status)
+ function sine_get_ptr_int(this, name, dest_ptr) result (bmi_status)
     class (bmi_sine), intent(in) :: this
     character (len=*), intent(in) :: name
     integer, pointer, intent(inout) :: dest_ptr(:)
-    !integer, pointer, intent(inout) :: dest_ptr
     integer :: bmi_status
     type (c_ptr) :: src
     integer :: n_elements
 
     select case(name)
 !    case("id")
-!       dest_ptr => [this%model%id]
+!       dest_ptr => this%model%id
 !       bmi_status = BMI_SUCCESS
 !    case("n_x")
-!       dest_ptr => [this%model%n_x]
+!       dest_ptr => this%model%n_x
 !       bmi_status = BMI_SUCCESS
 !    case("n_y")
-!       dest_ptr => [this%model%n_y]
+!       dest_ptr => this%model%n_y
 !       bmi_status = BMI_SUCCESS
     case default
        bmi_status = BMI_FAILURE
@@ -1199,6 +1278,9 @@ contains
     integer :: bmi_status
 
     select case(name)
+    case("description")
+       this%model%logvar = src
+       bmi_status = BMI_SUCCESS
     case default
        bmi_status = BMI_FAILURE
     end select
