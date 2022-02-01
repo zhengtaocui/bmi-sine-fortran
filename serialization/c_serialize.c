@@ -80,7 +80,7 @@ int c_serialize( char** names, int* cl, char** types, int* typelength,
       {
           for ( int j = 0; j < var_size[i]; ++j )
 	  {
-             msgpack_pack_int(&pk, *(signed char*)(signed char**)(cptr2[i]
+             msgpack_pack_signed_char(&pk, *(signed char*)(signed char**)(cptr2[i]
 				                + j * sizeof(signed char)));
 //             printf( "inside c_serialize: %s int1 = %d \n", cnames[i],
 //	           *(signed char*)(signed char**)(cptr2[i] + j * sizeof(signed char)) );
@@ -90,7 +90,7 @@ int c_serialize( char** names, int* cl, char** types, int* typelength,
       {
           for ( int j = 0; j < var_size[i]; ++j )
 	  {
-             msgpack_pack_int(&pk, *(short*)(short**)(cptr2[i]
+             msgpack_pack_short(&pk, *(short*)(short**)(cptr2[i]
 				                + j * sizeof(short)));
 //             printf( "inside c_serialize: %s int2 = %d \n", cnames[i],
 //	           *(short*)(short**)(cptr2[i] + j * sizeof(short)) );
@@ -100,7 +100,7 @@ int c_serialize( char** names, int* cl, char** types, int* typelength,
       {
           for ( int j = 0; j < var_size[i]; ++j )
 	  {
-             msgpack_pack_int(&pk, *(long*)(long**)(cptr2[i]
+             msgpack_pack_long(&pk, *(long*)(long**)(cptr2[i]
 				                + j * sizeof(long)));
 //             printf( "inside c_serialize: %s int8 = %d \n", cnames[i],
 //	           *(long*)(long**)(cptr2[i] + j * sizeof(long)) );
