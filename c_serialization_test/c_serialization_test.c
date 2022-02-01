@@ -4,6 +4,7 @@
 
 #include "iso_c_bmif_2_0.h"
 #include "serializer.h"
+#include "c_serializer.h"
 
 int BMI_SUCCESS = 0;
 void check_status(int* status, char* name){
@@ -31,12 +32,6 @@ int main(int argc, char** argv)
     void* box_handle = NULL;
     void* box_handle2 = NULL;
 
-    /*
-     * handles for the Fortran serializer
-     */
-    void* serializer_handle = NULL;
-    void* serializer_adapter_handle = NULL;
-
     char config_file[2048] = "sample.cfg";
     char ser_file[2048] = "serialize.out";
 
@@ -46,15 +41,6 @@ int main(int argc, char** argv)
     double pause_time = 50;
 
     char name[2048];
-
-    /*
-     *  create a serializer object
-     */
-    status = serializer_factory(&serializer_handle);
-    check_status(&status, "serializer factory");
-
-    status = c_create_adapter(&serializer_adapter_handle, &serializer_handle);
-    check_status(&status, "create adapter");
 
     /*
      * The first model
@@ -122,40 +108,9 @@ int main(int argc, char** argv)
       printf( "current time: %f\n", current_time);
     }
 
-    printf( "Before serializing, comparing two models ...\n" );
-
-    status = compare( &serializer_adapter_handle, &box_handle, &box_handle2 );
-    if ( status != BMI_SUCCESS )
-    {
-       printf( "Comparing failed! Model1 is not equal to Model2!\n" );
-    }
-    else
-    {
-       printf( "Comparing succeed! Model1 is equal to Model2!\n" );
-    }
-    printf( "Done comparing before serializing.\n" );
-
     printf( "Now serialize the first model ... \n" );
-    status = serialize( &serializer_adapter_handle, &box_handle, ser_file );
+    status = c_serialize_states(&box_handle, ser_file );
     check_status(&status, "serialize");
-
-    printf( "Now deserialize the first model to the second model... \n" );
-    status = deserialize( &serializer_adapter_handle, &box_handle2, ser_file );
-    check_status(&status, "deserialize");
-
-    printf( "After deserializing, comparing two models ...\n" );
-    status = compare( &serializer_adapter_handle, &box_handle, &box_handle2 );
-    if ( status != BMI_SUCCESS )
-    {
-       printf( "Comparing failed! Model1 is not equal to Model2!\n" );
-    }
-    else
-    {
-       printf( "Comparing succeed! Model1 is equal to Model2!\n" );
-    }
-    printf( "Done comparing after deserializing.\n" );
-
-    printf( "Now run both model to the end.\n" );
 
     /*
      * Run model 1 to end
@@ -182,24 +137,6 @@ int main(int argc, char** argv)
       check_status(&status, "get_current_time");
       printf( "current time: %f\n", current_time);
     }
-
-    printf( "After running to end, comparing two models ...\n" );
-    status = compare( &serializer_adapter_handle, &box_handle, &box_handle2 );
-    if ( status != BMI_SUCCESS )
-    {
-       printf( "Comparing failed! Model1 is not equal to Model2!\n" );
-    }
-    else
-    {
-       printf( "Comparing succeed! Model1 is equal to Model2!\n" );
-    }
-    printf( "Done comparing after both running to end.\n" );
-
-    status = serializer_destroy(&serializer_handle);
-    check_status(&status, "serializer destroy");
-
-    status = c_delete_adapter(&serializer_adapter_handle);
-    check_status(&status, "delete adapter");
 
 //    status = finalize(&box_handle);
 //    check_status(&status, "finalize");

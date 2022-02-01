@@ -6,6 +6,7 @@ project(bmi-sine-fortran Fortran C)
 
 set(model_name sinef)
 set(serializer_name serializerf)
+set(c_serializer_name serializerc)
 set(bmi_name bmi${model_name})
 
 # Determine the Fortran BMI version.
@@ -37,8 +38,10 @@ message("-- msgpackc_inc - ${msgpackc_inc}")
 add_subdirectory(sine)
 add_subdirectory(bmi_sine)
 add_subdirectory(serialization)
+add_subdirectory(c_serialization)
 add_subdirectory(serialization_tests)
 add_subdirectory(serialization_test_c)
+add_subdirectory(c_serialization_test)
 #add_subdirectory(examples)
 
 include(CTest)
