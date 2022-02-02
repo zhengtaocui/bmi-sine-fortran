@@ -5,6 +5,7 @@
 #include "iso_c_bmif_2_0.h"
 #include "serializer.h"
 #include "c_serializer.h"
+#include "c_deserializer.h"
 
 int BMI_SUCCESS = 0;
 void check_status(int* status, char* name){
@@ -111,6 +112,9 @@ int main(int argc, char** argv)
     printf( "Now serialize the first model ... \n" );
     status = c_serialize_states(&box_handle, ser_file );
     check_status(&status, "serialize");
+
+    status = c_deserialize_states(&box_handle2, ser_file );
+    check_status(&status, "deserialize");
 
     /*
      * Run model 1 to end

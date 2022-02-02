@@ -73,10 +73,10 @@ int c_deserialize( char** names, int* cl, char** types, int* typelength,
           for ( int j = 0; j < var_size[i]; ++j )
 	  {
              ret = msgpack_unpack_next(&unpacked, inbuffer, len, &off);
-	     *(float*)(float**)(cptr2[i] + j * sizeof(float)) =
-		                               (float)(unpacked.data.via.f64);
+	     ((float**)cptr2)[i][j] = (float)(unpacked.data.via.f64);
 //             printf( "inside c_deserialize %d, %f \n", j, 
-//			     *(float*)(float**)(cptr2[i]+ j*sizeof(float)));
+//			     //*(float*)(float**)(cptr2[i]+ j*sizeof(float)));
+//			     ((float**)cptr2)[i][j]);
 	  }
       }
       else if ( strcmp(ctypes[i], "real8") ==  0 )
@@ -85,8 +85,7 @@ int c_deserialize( char** names, int* cl, char** types, int* typelength,
           for ( int j = 0; j < var_size[i]; ++j )
 	  {
              ret = msgpack_unpack_next(&unpacked, inbuffer, len, &off);
-	     *(double*)(double**)(cptr2[i] + j * sizeof(double)) = 
-		                                (double)(unpacked.data.via.f64);
+	     ((double**)cptr2)[i][j] = (double)(unpacked.data.via.f64);
 //             printf( "inside c_deserialize %f \n", 
 //			  *(double*)(double**)(cptr2[i]+ j * sizeof(double)));
 	  }
@@ -97,8 +96,7 @@ int c_deserialize( char** names, int* cl, char** types, int* typelength,
           for ( int j = 0; j < var_size[i]; ++j )
 	  {
              ret = msgpack_unpack_next(&unpacked, inbuffer, len, &off);
-	     *(int*)(int**)(cptr2[i] + j * sizeof(int)) = 
-		                                (int)(unpacked.data.via.i64);
+	     ((int**)cptr2)[i][j] = (int)(unpacked.data.via.i64);
 //             printf( "inside c_deserialize %d \n", 
 //		      *(int*)(int**)(cptr2[i] + j * sizeof(int)));
 	  }
@@ -109,8 +107,7 @@ int c_deserialize( char** names, int* cl, char** types, int* typelength,
           for ( int j = 0; j < var_size[i]; ++j )
 	  {
              ret = msgpack_unpack_next(&unpacked, inbuffer, len, &off);
-	     *(signed char*)(signed char**)(cptr2[i] + 
-			                           j * sizeof(signed char)) = 
+	     ((signed char**)cptr2)[i][j] = 
 		                          (signed char)(unpacked.data.via.i64);
 //             printf( "inside c_deserialize %d \n", 
 //		   *(signed char*)(signed char**)(cptr2[i] + j * sizeof(int)));
@@ -122,8 +119,7 @@ int c_deserialize( char** names, int* cl, char** types, int* typelength,
           for ( int j = 0; j < var_size[i]; ++j )
 	  {
              ret = msgpack_unpack_next(&unpacked, inbuffer, len, &off);
-	     *(short*)(short**)(cptr2[i] + j * sizeof(short)) = 
-		                          (short)(unpacked.data.via.i64);
+	     ((short**)cptr2)[i][j] = (short)(unpacked.data.via.i64);
 //             printf( "inside c_deserialize %d \n", 
 //		      *(short*)(short**)(cptr2[i] + j * sizeof(shsort)));
 	  }
@@ -134,8 +130,7 @@ int c_deserialize( char** names, int* cl, char** types, int* typelength,
           for ( int j = 0; j < var_size[i]; ++j )
 	  {
              ret = msgpack_unpack_next(&unpacked, inbuffer, len, &off);
-	     *(long*)(long**)(cptr2[i] + j * sizeof(long)) = 
-		                          (long)(unpacked.data.via.i64);
+	     ((long**)cptr2)[i][j] = (long)(unpacked.data.via.i64);
 //             printf( "inside c_deserialize %d \n", 
 //		      *(long*)(long**)(cptr2[i] + j * sizeof(long)));
 	  }
@@ -144,7 +139,7 @@ int c_deserialize( char** names, int* cl, char** types, int* typelength,
 		                     strcmp(ctypes[i], "string") ==  0 )
       {
           ret = msgpack_unpack_next(&unpacked, inbuffer, len, &off);
-          strcpy(cptr2[i], (char*)unpacked.data.via.array.ptr );
+          strncpy(cptr2[i], (char*)unpacked.data.via.array.ptr, var_size[i] );
 	  cptr2[i][ var_size[i] - 1] = ' ';
 //          printf( "inside c_deserialize: %s string = %s \n", cnames[i],
 //	           (char*)(cptr2[i]) );
@@ -155,10 +150,9 @@ int c_deserialize( char** names, int* cl, char** types, int* typelength,
           for ( int j = 0; j < var_size[i]; ++j )
 	  {
              ret = msgpack_unpack_next(&unpacked, inbuffer, len, &off);
-	     *(int*)(int**)(cptr2[i] + j * sizeof(int)) = 
-		                          (int)(unpacked.data.via.i64);
-//             printf( "inside c_deserialize %d \n", 
-//		      *(int*)(int**)(cptr2[i] + j * sizeof(int)));
+//	     *(int*)(int**)(cptr2[i] + j * sizeof(int)) = 
+	     ((bool**)cptr2)[i][j] = (bool)(unpacked.data.via.i64);
+//             printf( "inside c_deserialize %d \n", ((bool**)cptr2)[i][j]);
 	  }
       }
     }

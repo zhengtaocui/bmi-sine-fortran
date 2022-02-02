@@ -1278,7 +1278,7 @@ contains
     integer :: bmi_status
 
     select case(name)
-    case("description")
+    case("logvar")
        this%model%logvar = src
        bmi_status = BMI_SUCCESS
     case default

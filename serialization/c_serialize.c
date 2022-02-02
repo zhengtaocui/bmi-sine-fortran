@@ -50,10 +50,9 @@ int c_serialize( char** names, int* cl, char** types, int* typelength,
       {
           for ( int j = 0; j < var_size[i]; ++j )
 	  {
-             msgpack_pack_float(&pk, *(float*)(float**)(cptr2[i]
-				                     + j * sizeof(float)));
-//             printf( "inside c_serialize: %s float = %f \n", cnames[i],
-//	           *(float*)(float**)(cptr2[i] + j * sizeof(float)) );
+             msgpack_pack_float(&pk, ((float**)cptr2)[i][j] );
+//             printf( "inside c_serialize: %s float(1) = %f \n", cnames[i],
+//	           *(((float**)cptr2)[i] + j ) );
 	  }
       }
       else if ( strcmp(ctypes[i], "real8") ==  0 )
@@ -62,16 +61,14 @@ int c_serialize( char** names, int* cl, char** types, int* typelength,
 	  {
 //             printf( "inside c_serialize: %s double = %f \n", cnames[i],
 //	           *(double*)(double**)(cptr2[i] + j * sizeof(double)) );
-             msgpack_pack_double(&pk, *(double*)(double**)(cptr2[i]
-				                + j * sizeof(double)));
+             msgpack_pack_double(&pk, ((double**)cptr2)[i][j] );
 	  }
       }
       else if ( strcmp(ctypes[i], "integer4") ==  0 )
       {
           for ( int j = 0; j < var_size[i]; ++j )
 	  {
-             msgpack_pack_int(&pk, *(int*)(int**)(cptr2[i]
-				                + j * sizeof(int)));
+             msgpack_pack_int(&pk, ((int**)cptr2)[i][j] );
 //             printf( "inside c_serialize: %s int = %d \n", cnames[i],
 //	           *(int*)(int**)(cptr2[i] + j * sizeof(float)) );
 	  }
@@ -80,8 +77,7 @@ int c_serialize( char** names, int* cl, char** types, int* typelength,
       {
           for ( int j = 0; j < var_size[i]; ++j )
 	  {
-             msgpack_pack_signed_char(&pk, *(signed char*)(signed char**)(cptr2[i]
-				                + j * sizeof(signed char)));
+             msgpack_pack_signed_char(&pk, ((signed char**)cptr2)[i][j] );
 //             printf( "inside c_serialize: %s int1 = %d \n", cnames[i],
 //	           *(signed char*)(signed char**)(cptr2[i] + j * sizeof(signed char)) );
 	  }
@@ -90,8 +86,7 @@ int c_serialize( char** names, int* cl, char** types, int* typelength,
       {
           for ( int j = 0; j < var_size[i]; ++j )
 	  {
-             msgpack_pack_short(&pk, *(short*)(short**)(cptr2[i]
-				                + j * sizeof(short)));
+             msgpack_pack_short(&pk, ((short**)cptr2)[i][j] );
 //             printf( "inside c_serialize: %s int2 = %d \n", cnames[i],
 //	           *(short*)(short**)(cptr2[i] + j * sizeof(short)) );
 	  }
@@ -100,8 +95,7 @@ int c_serialize( char** names, int* cl, char** types, int* typelength,
       {
           for ( int j = 0; j < var_size[i]; ++j )
 	  {
-             msgpack_pack_long(&pk, *(long*)(long**)(cptr2[i]
-				                + j * sizeof(long)));
+             msgpack_pack_long(&pk, ((long**)cptr2)[i][j] );
 //             printf( "inside c_serialize: %s int8 = %d \n", cnames[i],
 //	           *(long*)(long**)(cptr2[i] + j * sizeof(long)) );
 	  }
@@ -120,10 +114,16 @@ int c_serialize( char** names, int* cl, char** types, int* typelength,
           for ( int j = 0; j < var_size[i]; ++j )
 	  {
              //for gcc and ifort, the default size for logical is 4 bytes.
-             msgpack_pack_int(&pk, *(int*)(int**)(cptr2[i]
-				                + j * sizeof(int)));
-             printf( "inside c_serialize: %s logical = %d \n", cnames[i],
-	           *(int*)(int**)(cptr2[i] + j * sizeof(int)) );
+	     if ( ((bool**)cptr2)[i][j] )
+             {
+                msgpack_pack_true(&pk);
+	     }
+	     else
+	     {
+                msgpack_pack_false(&pk);
+	     }
+//             printf( "inside c_serialize: %s logical = %d \n", cnames[i],
+//	            ((bool**)cptr2)[i][j] );
 	  }
       }
       else

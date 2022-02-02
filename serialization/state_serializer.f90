@@ -1,6 +1,6 @@
 module state_serialization
   use serialization
-  use, intrinsic :: iso_c_binding, only: c_ptr, c_loc, c_f_pointer
+  use, intrinsic :: iso_c_binding, only: c_ptr, c_loc, c_f_pointer, c_bool
   implicit none
 
   private
@@ -35,7 +35,7 @@ module state_serialization
   end type strarray
 
   type :: logarray
-     logical, allocatable :: elements(:)
+     logical(kind=c_bool), allocatable :: elements(:)
   end type logarray
 
   type, extends(serializer) :: state_serializer
@@ -110,6 +110,7 @@ contains
             type(int8array), dimension(:), allocatable, target :: int8temp
             type(strarray), dimension(:), allocatable, target :: strtemp
             type(logarray), dimension(:), allocatable, target :: logtemp
+            logical, dimension(:), allocatable :: log4temp
 
             !integer, dimension(:), pointer :: intptr
             integer, pointer :: intptr
@@ -272,11 +273,14 @@ contains
                case( 'logical' )
                   logidx = logidx + 1
                   allocate(  logtemp(logidx)%elements(varlength) )
+                  allocate(  log4temp(varlength) )
                   bmi_status = model_in%get_value_logical( names(n), &
-                                        logtemp(logidx)%elements)
+                                        log4temp )
 !                  write(*,*) 'string'
 !                  write(*,*) trim( strtemp(stridx)%elements)
+                  logtemp(logidx)%elements = log4temp
                   temp(n) = c_loc(logtemp(logidx)%elements(1))
+                  deallocate( log4temp )
                case default
                        write(*,*) 'unknown type: ', type
                end select  
@@ -373,6 +377,8 @@ contains
             type(strarray), dimension(:), allocatable, target :: strtemp
             type(logarray), dimension(:), allocatable, target :: logtemp
 
+            logical, dimension(:), allocatable :: log4temp
+
             character(len=BMI_MAX_VAR_NAME), pointer :: names(:)
             character(len=BMI_MAX_TYPE_NAME) :: type
             character(len=BMI_MAX_TYPE_NAME), pointer :: types(:)
@@ -465,6 +471,7 @@ contains
             int2idx=0
             int8idx=0
             stridx=0 
+            logidx=0
             do n = 1, varcount
                bmi_status = model_out%get_var_type( names(n), type )  
                bmi_status = model_out%get_var_length( names(n), varlength )  
@@ -526,6 +533,7 @@ contains
             int8idx=0
             real8idx=0
             stridx=0
+            logidx=0
             do n = 1, varcount
                bmi_status = model_out%get_var_type( names(n), type )  
                select case( type )
@@ -547,6 +555,7 @@ contains
                                          int8temp(int8idx)%elements )  
                case( 'real4' )
                   realidx = realidx + 1
+!                  write(*,*) 'deserialize:', realtemp(realidx)%elements(:lengths(n))
                   bmi_status = model_out%set_value_float( names(n), &
                                          realtemp(realidx)%elements )  
                case( 'real8' )
@@ -560,8 +569,13 @@ contains
                                         strtemp(stridx)%elements )  
                case( 'logical' )
                   logidx = logidx + 1
+!                  write(*,*) 'F deserialize:', logtemp(logidx)%elements
+                  allocate(log4temp(lengths(n)))
+                  log4temp = logtemp(logidx)%elements(:lengths(n))
                   bmi_status = model_out%set_value_logical( names(n), &
-                                        logtemp(logidx)%elements )  
+                                        log4temp )  
+!                  write(*,*) 'F deserialize: deallocate log4temp'
+                  deallocate(log4temp)
                case default
                        write(*,*) 'unknown type: ', type
                end select  
@@ -769,6 +783,7 @@ contains
                    if ( strtemp1 .ne. strtemp2 ) then
                         write(*, *) 'varaibale ', trim(names(n)), &
                                                        ' is not equal!' 
+                        write(*, *) 'strtemp1: ', strtemp1, 'strtemp2: ', strtemp2
                         bmi_status = BMI_FAILURE 
                         return
                    end if  
@@ -781,10 +796,12 @@ contains
                   allocate( logtemp2( length2 ) )
                   bmi_status = model1%get_value_logical( names(n), logtemp1 ) 
                   bmi_status = model2%get_value_logical( names(n), logtemp2 )  
+!                  write(*,*) 'logtemp1', logtemp1
+!                  write(*,*) 'logtemp2', logtemp2
                   do i = 1, length1
                      if ( logtemp1(i) .neqv. logtemp2(i) ) then
                         write(*, *) 'varaibale ', trim(names(n)), ' is not equal!' 
-                        write(*, *) 'Mismatch: i = ', i
+                        write(*, *) 'Mismatch: i = ', i, logtemp1(i), logtemp2(i)
                         bmi_status = BMI_FAILURE 
                         return
                      end if  
