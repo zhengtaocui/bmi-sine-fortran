@@ -6,12 +6,12 @@
 #include <msgpack.h>
 #include <msgpack/fbuffer.h>
 
-#include "serializer.h"
-#include "c_serializer.h"
 #include "iso_c_bmif_2_0.h"
+#include "serializer.h"
+#include "c_deserializer.h"
 #include "ut_trim.h"
 
-int c_serialize_states(void** box_handle, const char* ser_file )
+int c_deserialize_states(void** box_handle, const char* ser_file )
 {
     char* temp = (char*)NULL;
     int* inttemp = (int*)NULL;
@@ -22,6 +22,7 @@ int c_serialize_states(void** box_handle, const char* ser_file )
     bool* booltemp = (bool*)NULL;
 
     int status, var_count, var_length;
+    unsigned long int buffer_size, unpacked_buffer_size;
   
     char name[2048];
     char type[2048];
@@ -31,14 +32,31 @@ int c_serialize_states(void** box_handle, const char* ser_file )
     char** names = NULL;
     char** cnames = NULL;
 
-    FILE *fp = fopen(ser_file, "w+");
-    msgpack_packer pk;
-    msgpack_packer_init(&pk, fp, msgpack_fbuffer_write);
+    //-------------------------------------
+    // Get the file size; set buffer_size
+    //-------------------------------------
+    struct stat st;
+    stat( ser_file, &st );
+    buffer_size = st.st_size;
+    unpacked_buffer_size = 2 * buffer_size;
 
-    status = get_component_name(box_handle, name);
-//    printf("In c_serialize_states: name=%s\n", name);
+    char inbuffer[buffer_size];
+    char unpacked_buffer[unpacked_buffer_size]; 
+
+    FILE *fp = fopen(ser_file, "rb");
+    int i = 0;
+    size_t off = 0;
+    size_t len = 0;
+
+    msgpack_unpacked unpacked;
+    msgpack_unpack_return ret;
+    msgpack_unpacked_init(&unpacked);
+
+    len = fread(inbuffer, sizeof(char), buffer_size, fp); 
+
+
     status = get_var_count(box_handle, role, &var_count);
-//    printf("In c_serialize_states: role=%s, count=%d\n", role, var_count);
+//    printf("In c_deserialize_states: role=%s, count=%d\n", role, var_count);
 
     names = malloc( sizeof(char*));
     cnames = malloc( var_count * sizeof(char*));
@@ -60,101 +78,100 @@ int c_serialize_states(void** box_handle, const char* ser_file )
       if ( strcmp(type, "integer4" ) == 0 )
       {
           inttemp  = (int*)malloc( var_length * sizeof(int) );
-	  status = get_value_int(box_handle, cnames[i], (int*)inttemp );
 	  for ( int j = 0; j < var_length; ++j )
 	  {
+              ret = msgpack_unpack_next(&unpacked, inbuffer, len, &off);
+	      inttemp[j] = (int)(unpacked.data.via.i64); 
 //              printf("       %s[%d] = %d \n", cnames[i], j, inttemp[j] );
-              msgpack_pack_int(&pk, inttemp[j]);
 	  }
+	  set_value_int(box_handle, cnames[i], inttemp);
 	  free(inttemp);
       }
       else if ( strcmp(type, "integer1" ) == 0 )
       {
           temp  = (char*)malloc( var_length * sizeof(char) );
-	  status = get_value_int1(box_handle, cnames[i], (char*)temp );
 	  for ( int j = 0; j < var_length; ++j )
 	  {
+              ret = msgpack_unpack_next(&unpacked, inbuffer, len, &off);
+	      temp[j] = (signed char)(unpacked.data.via.i64);
 //              printf("       %s[%d] = %d \n", cnames[i], j, temp[j] );
-              msgpack_pack_int(&pk, temp[j]);
 	  }
+	  set_value_int1(box_handle, cnames[i], temp);
 	  free(temp);
       }
       else if ( strcmp(type, "integer2" ) == 0 )
       {
           shorttemp  = (short*)malloc( var_length * sizeof(short) );
-	  status = get_value_int2(box_handle, cnames[i], shorttemp );
 	  for ( int j = 0; j < var_length; ++j )
 	  {
+              ret = msgpack_unpack_next(&unpacked, inbuffer, len, &off);
+	      shorttemp[j] = (short)(unpacked.data.via.i64);
 //              printf("       %s[%d] = %d \n", cnames[i], j, shorttemp[j] );
-              msgpack_pack_short(&pk, shorttemp[j]);
 	  }
+	  set_value_int2(box_handle, cnames[i], shorttemp);
 	  free(shorttemp);
       }
       else if ( strcmp(type, "integer8" ) == 0 )
       {
           longtemp  = (long*)malloc( var_length * sizeof(long) );
-	  status = get_value_int8(box_handle, cnames[i], longtemp );
 	  for ( int j = 0; j < var_length; ++j )
 	  {
+              ret = msgpack_unpack_next(&unpacked, inbuffer, len, &off);
+	      longtemp[j] = (long)(unpacked.data.via.i64);
 //              printf("       %s[%d] = %d \n", cnames[i], j, longtemp[j] );
-              msgpack_pack_long(&pk, longtemp[j]);
 	  }
+	  set_value_int8(box_handle, cnames[i], longtemp);
 	  free(longtemp);
       }
       else if ( strcmp(type, "real4" ) == 0 )
       {
           floattemp  = (float*)malloc( var_length * sizeof(float) );
-	  status = get_value_float(box_handle, cnames[i], floattemp );
 	  for ( int j = 0; j < var_length; ++j )
 	  {
+              ret = msgpack_unpack_next(&unpacked, inbuffer, len, &off);
+              floattemp[j] = (float)(unpacked.data.via.f64);
 //              printf("       %s[%d] = %f \n", cnames[i], j, floattemp[j] );
-              msgpack_pack_float(&pk, floattemp[j] );
 	  }
+	  set_value_float(box_handle, cnames[i], floattemp);
 	  free(floattemp);
       }
       else if ( strcmp(type, "real8" ) == 0 )
       {
           doubletemp  = (double*)malloc( var_length * sizeof(double) );
-	  status = get_value_double(box_handle, cnames[i], doubletemp );
 	  for ( int j = 0; j < var_length; ++j )
 	  {
+              ret = msgpack_unpack_next(&unpacked, inbuffer, len, &off);
+              doubletemp[j] = (double)(unpacked.data.via.f64);
 //              printf("       %s[%d] = %f \n", cnames[i], j, doubletemp[j] );
-              msgpack_pack_float(&pk, doubletemp[j] );
 	  }
+	  set_value_double(box_handle, cnames[i], doubletemp);
 	  free(doubletemp);
       }
       else if ( strcmp(type, "logical" ) == 0 )
       {
           booltemp  = (bool*)malloc( var_length * sizeof(bool) );
-	  status = get_value_logical(box_handle, cnames[i], (bool*)booltemp );
 	  for ( int j = 0; j < var_length; ++j )
 	  {
+              ret = msgpack_unpack_next(&unpacked, inbuffer, len, &off);
+	      booltemp[j] = (bool)(unpacked.data.via.i64); 
 //              printf("       %s[%d] = %d \n", cnames[i], j, booltemp[j] );
-	      if ( booltemp[j] )
-	      {
-                msgpack_pack_true(&pk );
-	      }
-	      else
-	      {
-                msgpack_pack_false(&pk );
-	      }
-
 	  }
+	  set_value_logical(box_handle, cnames[i], booltemp);
 	  free(booltemp);
       }
       else if ( strcmp(type, "character" ) == 0 )
       {
           temp  = (char*)malloc( var_length * sizeof(char) );
-	  status = get_value_string(box_handle, cnames[i], temp );
+          ret = msgpack_unpack_next(&unpacked, inbuffer, len, &off);
+          strcpy(temp, (char*)unpacked.data.via.array.ptr );
+	  temp[ var_length - 1] = '\0';
 //          printf("       %s = %s \n", cnames[i], temp );
-          msgpack_pack_str(&pk, var_length - 1 );
-          msgpack_pack_str_body(&pk, temp, var_length - 1 );
+	  set_value_string(box_handle, cnames[i], temp);
 	  free(temp);
       }
       else
       {
             printf("  WARNING: Unknown type = %s\n", type );
-            msgpack_pack_nil(&pk);  // Need something; will this work?
       }
     }
 

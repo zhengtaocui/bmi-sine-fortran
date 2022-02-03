@@ -6,6 +6,7 @@
 #include "serializer.h"
 #include "c_serializer.h"
 #include "c_deserializer.h"
+#include "c_model_compare.h"
 
 int BMI_SUCCESS = 0;
 void check_status(int* status, char* name){
@@ -109,12 +110,37 @@ int main(int argc, char** argv)
       printf( "current time: %f\n", current_time);
     }
 
+    printf( "Before serializing, comparing two models ...\n" );
+
+    status = c_model_compare( &box_handle, &box_handle2 );
+    if ( status != BMI_SUCCESS )
+    {
+       printf( "Comparing failed! Model1 is not equal to Model2!\n" );
+    }
+    else
+    {
+       printf( "Comparing succeed! Model1 is equal to Model2!\n" );
+    }
+    printf( "Done comparing before serializing.\n" );
+
     printf( "Now serialize the first model ... \n" );
     status = c_serialize_states(&box_handle, ser_file );
     check_status(&status, "serialize");
 
     status = c_deserialize_states(&box_handle2, ser_file );
     check_status(&status, "deserialize");
+
+    printf( "After deserializing, comparing two models ...\n" );
+    status = c_model_compare( &box_handle, &box_handle2 );
+    if ( status != BMI_SUCCESS )
+    {
+       printf( "Comparing failed! Model1 is not equal to Model2!\n" );
+    }
+    else
+    {
+       printf( "Comparing succeed! Model1 is equal to Model2!\n" );
+    }
+    printf( "Done comparing after deserializing.\n" );
 
     /*
      * Run model 1 to end
@@ -142,8 +168,18 @@ int main(int argc, char** argv)
       printf( "current time: %f\n", current_time);
     }
 
-//    status = finalize(&box_handle);
-//    check_status(&status, "finalize");
+    printf( "After running to end, comparing two models ...\n" );
+    status = c_model_compare( &box_handle, &box_handle2 );
+    if ( status != BMI_SUCCESS )
+    {
+       printf( "Comparing failed! Model1 is not equal to Model2!\n" );
+    }
+    else
+    {
+       printf( "Comparing succeed! Model1 is equal to Model2!\n" );
+    }
+    printf( "Done comparing after both running to end.\n" );
+
 
     status = bmi_destroy(&bmi_handle);
     check_status(&status, "destroy model 1");
