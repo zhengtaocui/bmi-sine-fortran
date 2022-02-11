@@ -52,6 +52,8 @@ program bmi_main
      s = model%get_current_time(current_time)
   end do
 
+  call model%print_model_info( )
+
   deallocate(sine)
   s = model%finalize()
   write(file_unit,"(a)") "Finalize model."

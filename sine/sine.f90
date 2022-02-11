@@ -22,11 +22,13 @@ module sinef
 
      real, dimension(:,:), allocatable :: sine2d
      real*8, pointer :: sine2d_ptr(:,:)
+     real*8, dimension(:,:), allocatable :: double2d(:,:)
 
      character(len=MAX_STRING_LENGTH) :: description
 
      logical, dimension(:), allocatable :: logvar(:)
 
+     integer, dimension(:,:), allocatable :: int2d
   end type sine_model
 
   private :: initialize
@@ -69,12 +71,16 @@ contains
     allocate( model%sine2d( model%n_y, model%n_x ) ) 
     allocate( model%sine2d_ptr( model%n_y, model%n_x ) ) 
     allocate( model%logvar( model%n_y ) ) 
+    allocate( model%int2d( model%n_y, model%n_x ) ) 
+    allocate( model%double2d( model%n_y, model%n_x ) ) 
 
     model%description = 'Model initialized!'
 
     model%sinevalue_tmp = 0.
     model%sine2d = 0.
     model%sine2d_ptr = 0.
+    model%int2d = 0
+    model%double2d = 0.
 
     model%logvar = .TRUE.
 
@@ -99,6 +105,13 @@ contains
         deallocate(model%logvar)
     end if
 
+    if ( allocated( model%int2d ) ) then
+        deallocate(model%int2d)
+    end if
+
+    if ( allocated( model%double2d ) ) then
+            deallocate(model%double2d)
+    end if
     return
   end subroutine cleanup
 
@@ -122,6 +135,8 @@ contains
           !        ...
           model%sine2d(j, i) = model%sinevalue + i * 10. + j*100.
           model%sine2d_ptr(j, i) = model%sinevalue + i * 100. + j*1000.
+          model%int2d(j, i) = i  + j * 10
+          model%double2d(j, i) =  model%sinevalue + i * 1110. + j*10000.
        end do
     end do
     do j = 1, model%n_y 
@@ -162,6 +177,17 @@ contains
     write(*,"(a7)") "logvar:"
     write(*,*) (model%logvar(i), i = 1, model%n_y)
 
+    write(*,"(a7)") "int2d:"
+    write(rowfmt,'(a,I2,a)') '(1x,',model%n_x, 'I4))'
+    do j = 1, model%n_y
+       write(*,rowfmt) (model%int2d(j,i), i = 1, model%n_x)
+    end do
+
+    write(*,"(a9)") "double2d:"
+    write(rowfmt,'(a,I2,a)') '(1x,',model%n_x, 'f12.4))'
+    do j = 1, model%n_y
+       write(*,rowfmt) (model%double2d(j,i), i = 1, model%n_x)
+    end do
   end subroutine print_info
 
   ! A helper routine that prints the current state of the model.

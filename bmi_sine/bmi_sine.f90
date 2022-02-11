@@ -5,7 +5,7 @@ module bmisinef
   use, intrinsic :: iso_c_binding, only: c_ptr, c_loc, c_f_pointer
   implicit none
 
-  integer, parameter :: STATE_VAR_NAME_COUNT = 13
+  integer, parameter :: STATE_VAR_NAME_COUNT = 15
 
   type :: variable
      integer :: index
@@ -77,11 +77,15 @@ module bmisinef
           get_value_logical
      procedure :: get_value_ptr_int => sine_get_ptr_int
      procedure :: get_value_ptr_float => sine_get_ptr_float
-     procedure :: get_value_ptr_double => sine_get_ptr_double
+     procedure :: get_value_ptr_double_1darray => sine_get_ptr_double_1darray
+     procedure :: get_value_ptr_double_2darray => sine_get_ptr_double_2darray
+     procedure :: get_value_ptr_double_scalar => sine_get_ptr_double_scalar
      generic :: get_value_ptr => &
           get_value_ptr_int, &
           get_value_ptr_float, &
-          get_value_ptr_double
+          get_value_ptr_double_1darray, &
+          get_value_ptr_double_2darray, &
+          get_value_ptr_double_scalar
      procedure :: get_value_at_indices_int => sine_get_at_indices_int
      procedure :: get_value_at_indices_float => sine_get_at_indices_float
      procedure :: get_value_at_indices_double => sine_get_at_indices_double
@@ -134,7 +138,7 @@ module bmisinef
 
   ! Exchange items
   integer, parameter :: input_item_count = 7
-  integer, parameter :: output_item_count = 6
+  integer, parameter :: output_item_count = 8
   integer, parameter :: all_item_count = STATE_VAR_NAME_COUNT
   character (len=BMI_MAX_VAR_NAME), target, &
        dimension(input_item_count) :: input_items
@@ -184,7 +188,13 @@ module bmisinef
                       variable(13, 'logvar', 'logical', &
                                   1, &
                                 'no_set', 'DIMENSIONLESS', &
-                                'node', 1 ) /)
+                                'node', 1 ),               &
+                      variable(14, 'int2d', 'integer', 1, &
+                                'no_set', 'DIMENSIONLESS', &
+                                'node', 2 ),               &
+                      variable(15, 'double2d', 'real*8', 1, &
+                                'no_set', 'DIMENSIONLESS', &
+                                'node', 2 ) /)
 
       interface get_type_and_kind
            module procedure get_type_and_kind_scalar
@@ -192,6 +202,16 @@ module bmisinef
            module procedure get_type_and_kind_2darray
       end interface get_type_and_kind
   
+!
+!this doesn't work, got error 
+!Error: ‘sine_get_ptr_int’ and ‘sine_get_ptr_double’ cannot be mixed
+!FUNCTION/SUBROUTINE for GENERIC ‘get_value_ptr’ at (1)
+
+!      interface sine_get_ptr_int
+!           module procedure sine_get_ptr_int_scalar
+!           module procedure sine_get_ptr_int_array
+!           module procedure sine_get_ptr_int_2darray
+!      end interface sine_get_ptr_int
 contains
 
   function get_type_and_kind_scalar( var ) result ( typeandkind )
@@ -340,6 +360,8 @@ contains
     output_items(4) = 'sine2d_ptr'
     output_items(5) = 'description'
     output_items(6) = 'logvar'
+    output_items(7) = 'int2d'
+    output_items(8) = 'double2d'
     names => output_items
     bmi_status = BMI_SUCCESS
   end function sine_output_var_names
@@ -363,6 +385,9 @@ contains
     !sine2d_ptr
     var_info(11)%size =  this%model%n_x * this%model%n_y
     var_info(13)%size =  this%model%n_y
+    !int2d
+    var_info(14)%size =  this%model%n_x * this%model%n_y
+    var_info(15)%size =  this%model%n_x * this%model%n_y
 
     var_info(1)%type = get_type_and_kind( this%model%t )
     var_info(2)%type = get_type_and_kind( this%model%alpha )
@@ -377,6 +402,8 @@ contains
     var_info(11)%type = get_type_and_kind( this%model%sine2d_ptr )
     var_info(12)%type = get_type_and_kind( this%model%description )
     var_info(13)%type = get_type_and_kind( this%model%logvar )
+    var_info(14)%type = get_type_and_kind( this%model%int2d )
+    var_info(15)%type = get_type_and_kind( this%model%double2d )
 
     bmi_status = BMI_SUCCESS
   end function sine_initialize
@@ -490,6 +517,12 @@ contains
        bmi_status = BMI_SUCCESS
     case('logvar')
        grid = 1
+       bmi_status = BMI_SUCCESS
+    case('int2d')
+       grid = 2
+       bmi_status = BMI_SUCCESS
+    case('double2d')
+       grid = 2
        bmi_status = BMI_SUCCESS
     case default
        grid = 0
@@ -853,6 +886,12 @@ contains
     case("logvar")
        size = sizeof(this%model%logvar(1))
        bmi_status = BMI_SUCCESS
+    case("int2d")
+       size = sizeof(this%model%int2d(1,1))
+       bmi_status = BMI_SUCCESS
+    case("double2d")
+       size = sizeof(this%model%int2d(1,1))
+       bmi_status = BMI_SUCCESS
     case default
        size = -1
        bmi_status = BMI_FAILURE
@@ -910,6 +949,9 @@ contains
        bmi_status = BMI_SUCCESS
     case("n_y")
        dest = [this%model%n_y]
+       bmi_status = BMI_SUCCESS
+    case("int2d")
+       dest = reshape(this%model%int2d, [size(this%model%int2d)])
        bmi_status = BMI_SUCCESS
     case default
        dest(:) = -1
@@ -1002,6 +1044,9 @@ contains
     case("sine2d_ptr")
        dest = reshape(this%model%sine2d_ptr, [size(this%model%sine2d_ptr)])
        bmi_status = BMI_SUCCESS
+    case("double2d")
+       dest = reshape(this%model%double2d, [size(this%model%double2d)])
+       bmi_status = BMI_SUCCESS
     case default
        dest(:) = -1.d0
        bmi_status = BMI_FAILURE
@@ -1045,6 +1090,7 @@ contains
     class (bmi_sine), intent(in) :: this
     character (len=*), intent(in) :: name
     integer, pointer, intent(inout) :: dest_ptr(:)
+!    integer, pointer, intent(inout) :: dest_ptr
     integer :: bmi_status
     type (c_ptr) :: src
     integer :: n_elements
@@ -1058,6 +1104,9 @@ contains
 !       bmi_status = BMI_SUCCESS
 !    case("n_y")
 !       dest_ptr => this%model%n_y
+!       bmi_status = BMI_SUCCESS
+!    case("int2d")
+!       dest_ptr => this%model%int2d
 !       bmi_status = BMI_SUCCESS
     case default
        bmi_status = BMI_FAILURE
@@ -1079,8 +1128,42 @@ contains
     end select
   end function sine_get_ptr_float
 
-  ! Get a reference to an double-valued variable, flattened.
-  function sine_get_ptr_double(this, name, dest_ptr) result (bmi_status)
+ ! ! Get a reference to an double-valued variable, flattened.
+ ! function sine_get_ptr_double(this, name, dest_ptr) result (bmi_status)
+ !   class (bmi_sine), intent(in) :: this
+ !   character (len=*), intent(in) :: name
+ !   double precision, pointer, intent(inout) :: dest_ptr(:)
+ !   integer :: bmi_status
+ !   type (c_ptr) :: src
+ !   integer :: n_elements
+!
+!    select case(name)
+!    case("sinevalue_tmp")
+!       ! This function allocate spaces for the pointer type.
+!       ! In an ideal case, we should set the pointer to the variable directly 
+!       ! without allocating additional spaces. However, you can only set a
+!       ! pointer to a pointer or fixed size variales, not the allocatable
+!       ! variables. The 1d array pointer here can also not be pointed to a
+!       ! scalar or array with dimension other than 1d.
+!       ! It should be remembered to deallocate the additional space after
+!       ! calling this function.
+!       allocate( dest_ptr( size(this%model%sinevalue_tmp ) ) )
+!       dest_ptr = this%model%sinevalue_tmp
+!       bmi_status = BMI_SUCCESS
+!    case("sine2d_ptr")
+!       allocate( dest_ptr( size(this%model%sine2d_ptr) ) )
+!       dest_ptr = reshape(this%model%sine2d_ptr, [size(this%model%sine2d_ptr)])
+!       bmi_status = BMI_SUCCESS
+!    case("double2d")
+!       allocate( dest_ptr( size(this%model%double2d) ) )
+!       dest_ptr = reshape(this%model%double2d, [size(this%model%double2d)])
+!       bmi_status = BMI_SUCCESS
+!    case default
+!       bmi_status = BMI_FAILURE
+!    end select
+!  end function sine_get_ptr_double
+
+  function sine_get_ptr_double_1darray(this, name, dest_ptr) result (bmi_status)
     class (bmi_sine), intent(in) :: this
     character (len=*), intent(in) :: name
     double precision, pointer, intent(inout) :: dest_ptr(:)
@@ -1089,10 +1172,58 @@ contains
     integer :: n_elements
 
     select case(name)
+    case("sinevalue_tmp")
+       !have to allocate space here becaue you can not point to a allocatable
+       !variable. Maybe use pointers in sine.f90?
+       !caller has to destory this memory allocation, otherwise there is a
+       ! memory leak.
+       !
+       allocate( dest_ptr, source=this%model%sinevalue_tmp )
+!       dest_ptr => this%model%sinevalue_tmp
+       bmi_status = BMI_SUCCESS
     case default
        bmi_status = BMI_FAILURE
     end select
-  end function sine_get_ptr_double
+  end function sine_get_ptr_double_1darray
+
+  function sine_get_ptr_double_2darray(this, name, dest_ptr) result (bmi_status)
+    class (bmi_sine), intent(in) :: this
+    character (len=*), intent(in) :: name
+    double precision, pointer, intent(inout) :: dest_ptr(:,:)
+    integer :: bmi_status
+    type (c_ptr) :: src
+    integer :: n_elements
+
+    select case(name)
+    case("sine2d_ptr")
+       dest_ptr => this%model%sine2d_ptr
+       bmi_status = BMI_SUCCESS
+    case("double2d")
+
+       !have to allocate space here becaue you can not point to a allocatable
+       !variable. Maybe use pointers in sine.f90?
+       !caller has to destory this memory allocation, otherwise there is a
+       ! memory leak.
+       allocate( dest_ptr, source=this%model%double2d )
+       bmi_status = BMI_SUCCESS
+    case default
+       bmi_status = BMI_FAILURE
+    end select
+  end function sine_get_ptr_double_2darray
+
+  function sine_get_ptr_double_scalar(this, name, dest_ptr) result (bmi_status)
+    class (bmi_sine), intent(in) :: this
+    character (len=*), intent(in) :: name
+    double precision, pointer, intent(inout) :: dest_ptr
+    integer :: bmi_status
+    type (c_ptr) :: src
+    integer :: n_elements
+
+    select case(name)
+    case default
+       bmi_status = BMI_FAILURE
+    end select
+  end function sine_get_ptr_double_scalar
 
   ! Get values of an integer variable at the given locations.
   function sine_get_at_indices_int(this, name, dest, inds) &
@@ -1164,6 +1295,9 @@ contains
        bmi_status = BMI_SUCCESS
     case("n_y")
        this%model%n_y = src(1)
+       bmi_status = BMI_SUCCESS
+    case("int2d")
+       this%model%int2d = reshape( src, [this%model%n_y, this%model%n_x] )
        bmi_status = BMI_SUCCESS
     case default
        bmi_status = BMI_FAILURE
@@ -1250,6 +1384,9 @@ contains
        bmi_status = BMI_SUCCESS
     case("sine2d_ptr")
        this%model%sine2d_ptr = reshape(src, [this%model%n_y, this%model%n_x])
+       bmi_status = BMI_SUCCESS
+    case("double2d")
+       this%model%double2d = reshape(src, [this%model%n_y, this%model%n_x])
        bmi_status = BMI_SUCCESS
     case default
        bmi_status = BMI_FAILURE
@@ -1483,6 +1620,7 @@ contains
     if( .not. associated( bmi_model ) ) then
       bmi_status = BMI_FAILURE
     else
+      bmi_status = bmi_model%finalize()
       deallocate( bmi_model )
       bmi_status = BMI_SUCCESS
     endif

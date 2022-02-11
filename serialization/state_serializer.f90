@@ -1,3 +1,17 @@
+! ----------------------------------------------
+! c_serializer.c
+! ----------------------------------------------
+! auther: Zhengtao Cui
+! created on Jan. 5, 2022
+! Last date of modification: Feb 10, 2022
+! Reference: 
+!
+! Description: Implement the abstract 'serializer' class
+!              serialize the model states to a binary file using
+!              the msgpack-c library
+! 		 
+
+
 module state_serialization
   use serialization
   use, intrinsic :: iso_c_binding, only: c_ptr, c_loc, c_f_pointer, c_bool
@@ -6,6 +20,10 @@ module state_serialization
   private
   public :: state_serializer
 
+  ! 
+  !wrapper for array, Fortran doesn't allow a array of arrays
+  ! use these wrappers instead 
+  !
   type :: realarray
      real, allocatable :: elements(:) 
   end type realarray
@@ -38,6 +56,9 @@ module state_serialization
      logical(kind=c_bool), allocatable :: elements(:)
   end type logarray
 
+  !
+  !sub-class of 'serializer' abstrace class
+  !
   type, extends(serializer) :: state_serializer
      contains
        !serialization 
@@ -48,6 +69,10 @@ module state_serialization
   end type state_serializer
   
   interface
+
+     !
+     !interface for ISO C Binding to call the C c_serialize function
+     !
      function f_c_serialize( names, length, types, typelength,  count, &
                      var_sizes, cptr2, ser_file) &
                     result( result ) bind(C, name="c_serialize")      
@@ -64,6 +89,9 @@ module state_serialization
 
     end function f_c_serialize
 
+     !
+     !interface for ISO C Binding to call the C c_deserialize function
+     !
     function f_c_deserialize( names, length, types, typelength,  count, &
                     var_sizes, cptr2, ser_file) &
                     result( result ) bind(C, name="c_deserialize")      
@@ -83,6 +111,10 @@ module state_serialization
 
 contains
 
+     !
+     ! test code to call a C function, pasing string and integer 
+     ! data types. No ISO C Binding is needed.
+     !
      subroutine calling_c_test(this, testint, fstring1, fstring)
          use bmif_2_0
          class(state_serializer), intent(in) :: this
