@@ -1,16 +1,17 @@
 ! ----------------------------------------------
-! c_serializer.c
+! state_serializer.f90
 ! ----------------------------------------------
 ! auther: Zhengtao Cui
 ! created on Jan. 5, 2022
 ! Last date of modification: Feb 10, 2022
 ! Reference: 
 !
-! Description: Implement the abstract 'serializer' class
+! Description: Implement the abstract 'serializer' class. This is the 
+!              case that we use Fortan to do the serialization, minimizing 
+!              the usage of iso C binding functions.
 !              serialize the model states to a binary file using
-!              the msgpack-c library
+!              the msgpack-c library in Fortran programing language
 ! 		 
-
 
 module state_serialization
   use serialization
@@ -125,6 +126,9 @@ contains
          call c_wrapper_test(testint, fstring1, fstring)
      end subroutine calling_c_test
 
+     !
+     ! does the actual serialization work for a given model obj and a disk file
+     !
      function serialize_states(this, model_in, ser_file) result (bmi_status)
             use bmif_2_0
             use serialization
@@ -166,6 +170,9 @@ contains
 
             allocate( types(varcount) )
             allocate( lengths(varcount) )
+            !
+            ! count the number of variables for each data type
+            !
             realcount = 0
             real8count = 0
             intcount = 0
@@ -199,6 +206,7 @@ contains
                end select  
             end do
 
+            !allocate spaces for each datatype
             if ( realcount .gt. 0 ) then
               allocate( realtemp(realcount) )
             end if
@@ -241,6 +249,10 @@ contains
             int8idx=0
             stridx=0 
             logidx=0 
+            !
+            !get the values for each variable and put the pointers to these
+            ! values in a pointer array, `temp`. 
+            !
             do n = 1, varcount
                bmi_status = model_in%get_var_type( names(n), type )  
                bmi_status = model_in%get_var_length( names(n), varlength )  
@@ -324,11 +336,16 @@ contains
             end do
             c_ser_file(len(ser_file)+1) = c_null_char
 
+            !
+            !Now passing all variables to the C function to perform
+            ! serialization.
+            !
             bmi_status = f_c_serialize( c_loc( names ), BMI_MAX_VAR_NAME, &
                                         c_loc( types ), BMI_MAX_TYPE_NAME, &
                                 varcount, c_loc(lengths), &
                                 c_loc(temp), c_loc( c_ser_file ) )
 
+            ! serialization is done now, cleanning up
             if ( realcount .gt. 0 ) then
               do n = 1, realcount
                 deallocate( realtemp(n)%elements ) 
@@ -392,6 +409,10 @@ contains
             bmi_status = BMI_SUCCESS
      end function serialize_states
 
+     !
+     ! does the actual deserialization work for a given model obj and a 
+     !  disk file
+     !
      function deserialize_states(this, model_out, ser_file) result (bmi_status)
             use bmif_2_0
             use, intrinsic :: iso_c_binding
@@ -429,6 +450,9 @@ contains
 
             allocate( types(varcount) )
             allocate( lengths(varcount) )
+            !
+            !count the number of variables for each datatype
+            !
             realcount = 0
             real8count = 0
             intcount = 0
@@ -462,6 +486,9 @@ contains
                end select  
             end do
 
+            !
+            !allocate spaces for each datatype
+            ! to hold pointers to each variable in each dataype
             if ( realcount .gt. 0 ) then
               allocate( realtemp(realcount) )
             end if
@@ -504,6 +531,10 @@ contains
             int8idx=0
             stridx=0 
             logidx=0
+            !
+            !allocate space for each variable, and set the pointers to these
+            ! variables into an array, `temp`.
+            !
             do n = 1, varcount
                bmi_status = model_out%get_var_type( names(n), type )  
                bmi_status = model_out%get_var_length( names(n), varlength )  
@@ -553,6 +584,10 @@ contains
             c_ser_file(len(ser_file)+1) = c_null_char
             !write(*,*) c_ser_file
 
+            !
+            !Now we call the C function to obtain values of each model state
+            !variable passed by an array of pointers 
+            !
             bmi_status = f_c_deserialize( c_loc( names ), BMI_MAX_VAR_NAME, &
                                         c_loc( types ), BMI_MAX_TYPE_NAME, &
                                 varcount, c_loc(lengths), &
@@ -566,6 +601,10 @@ contains
             real8idx=0
             stridx=0
             logidx=0
+            !
+            ! papulate model states with values obtained from above
+            ! C function 
+            !
             do n = 1, varcount
                bmi_status = model_out%get_var_type( names(n), type )  
                select case( type )
@@ -613,6 +652,7 @@ contains
                end select  
             end do
 
+            !cleaning up 
             if ( realcount .gt. 0 ) then
               do n = 1, realcount
                 deallocate( realtemp(n)%elements ) 
@@ -675,6 +715,12 @@ contains
             bmi_status = BMI_SUCCESS
      end function deserialize_states
 
+     !
+     !compare each state variable for two given model objects.
+     ! return BMI_FAILURE on the first non-matching variable. Return
+     ! BMI_SUCCESS when all state variables are equal in the two model
+     ! instances.
+     !
      function compare_states(this, model1, model2) result (bmi_status)
             use bmif_2_0
             class(state_serializer), intent(in) :: this
@@ -696,6 +742,8 @@ contains
             bmi_status = model1%get_var_count( 'all', varcount)
             bmi_status = model2%get_var_names( 'all', names)
 
+            !
+            !compare each state variable
             do n = 1, varcount
                bmi_status = model1%get_var_type( names(n), typename )  
                bmi_status = model1%get_var_length( names(n), length1 )  
@@ -850,6 +898,9 @@ contains
             bmi_status = BMI_SUCCESS
      end function compare_states
 
+     !
+     !create an object of the serializer
+     !
      function serializer_factory(this) result(bmi_status) &
                                                  bind(C, name="serializer_factory")
         use, intrinsic:: iso_c_binding, only: c_ptr, c_loc, c_int
@@ -868,6 +919,8 @@ contains
   end function serializer_factory
 
 
+  !
+  !delete and cleanup space for the serializer object
   function serializer_destroy(this) result(bmi_status) bind(C, name="serializer_destroy")
     use, intrinsic:: iso_c_binding, only: c_ptr, c_loc, c_int
     use bmif_2_0
@@ -886,6 +939,10 @@ contains
     endif
   end function serializer_destroy
 
+  !
+  ! create the `serializer_adapter` object from the given pointer of 
+  ! a serializer object
+  !
   function create_adapter(this, serializer_ptr) result(bmi_status) bind(C, name="c_create_adapter")
    use, intrinsic:: iso_c_binding, only: c_ptr, c_loc, c_int
    use bmif_2_0
@@ -903,7 +960,7 @@ contains
    allocate(adapter)
 
    call c_f_pointer( serializer_ptr, f_serializer_ptr)
-   !associate the wrapper pointer the created model instance
+   !associate the adapter pointer with the created serializer instance
    adapter%ptr => f_serializer_ptr
 
    if( .not. associated( adapter ) .or. .not. associated( adapter%ptr ) ) then
@@ -915,6 +972,11 @@ contains
    endif
  end function create_adapter
 
+ !
+ !delete the adapter object
+ !this should to be used only after the serializer object it points to has been
+ !deleted.
+ !
   function delete_adapter(this) result(bmi_status) bind(C, &
           name="c_delete_adapter")
    use, intrinsic:: iso_c_binding, only: c_ptr, c_loc, c_int

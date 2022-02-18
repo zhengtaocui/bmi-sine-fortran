@@ -1,3 +1,15 @@
+/** ----------------------------------------------
+  * c_serialization_test.c
+  * ----------------------------------------------
+  * auther: Zhengtao Cui
+  * created on Feb. 2, 2022
+  * Last date of modification: Feb 18, 2022
+  * Reference: https://github.com/NOAA-OWP/cfe.git
+  *            test_serialize/serialize_state.c
+  *
+  * Description: test program for the the C version of the 
+  *             serialization/deserialization code in ../c_serialization.
+  */
 #include <dlfcn.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -168,6 +180,9 @@ int main(int argc, char** argv)
       printf( "current time: %f\n", current_time);
     }
 
+    /*
+     * compare the two models again
+     */
     printf( "After running to end, comparing two models ...\n" );
     status = c_model_compare( &box_handle, &box_handle2 );
     if ( status != BMI_SUCCESS )
@@ -181,6 +196,9 @@ int main(int argc, char** argv)
     printf( "Done comparing after both running to end.\n" );
 
 
+    /*
+     * cleaning up
+     */
     status = bmi_destroy(&bmi_handle);
     check_status(&status, "destroy model 1");
 

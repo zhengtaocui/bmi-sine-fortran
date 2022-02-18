@@ -1,3 +1,16 @@
+!----------------------------------------------
+! test_serialize_c.c
+! ----------------------------------------------
+! auther: Zhengtao Cui
+! created on Feb. 2, 2022
+! Last date of modification: Feb 18, 2022
+! Reference: https://github.com/NOAA-OWP/cfe.git
+!            test_serialize/serialize_state.c
+!
+! Description: test program for the the Fortran version of the 
+!             serialization/deserialization code in ../serialization,
+!             using Fortran programing language
+
 program test_serialize
 
   use bmif_2_0, only: BMI_FAILURE, BMI_SUCCESS, BMI_MAX_COMPONENT_NAME

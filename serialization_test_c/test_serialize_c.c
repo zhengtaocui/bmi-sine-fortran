@@ -1,3 +1,16 @@
+/** ----------------------------------------------
+  * test_serialize_c.c
+  * ----------------------------------------------
+  * auther: Zhengtao Cui
+  * created on Feb. 2, 2022
+  * Last date of modification: Feb 18, 2022
+  * Reference: https://github.com/NOAA-OWP/cfe.git
+  *            test_serialize/serialize_state.c
+  *
+  * Description: test program for the the Fortran version of the 
+  *             serialization/deserialization code in ../serialization,
+  *             using C code.
+  */
 #include <dlfcn.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -195,6 +208,8 @@ int main(int argc, char** argv)
     }
     printf( "Done comparing after both running to end.\n" );
 
+    //
+    //cleaning up
     status = serializer_destroy(&serializer_handle);
     check_status(&status, "serializer destroy");
 

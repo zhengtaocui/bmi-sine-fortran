@@ -77,15 +77,17 @@ module bmisinef
           get_value_logical
      procedure :: get_value_ptr_int => sine_get_ptr_int
      procedure :: get_value_ptr_float => sine_get_ptr_float
-     procedure :: get_value_ptr_double_1darray => sine_get_ptr_double_1darray
-     procedure :: get_value_ptr_double_2darray => sine_get_ptr_double_2darray
-     procedure :: get_value_ptr_double_scalar => sine_get_ptr_double_scalar
+     procedure :: get_value_ptr_double => sine_get_ptr_double
+     !procedure :: get_value_ptr_double_1darray => sine_get_ptr_double_1darray
+     !procedure :: get_value_ptr_double_2darray => sine_get_ptr_double_2darray
+     !procedure :: get_value_ptr_double_scalar => sine_get_ptr_double_scalar
      generic :: get_value_ptr => &
           get_value_ptr_int, &
           get_value_ptr_float, &
-          get_value_ptr_double_1darray, &
-          get_value_ptr_double_2darray, &
-          get_value_ptr_double_scalar
+          get_value_ptr_double
+!          get_value_ptr_double_1darray, &
+!          get_value_ptr_double_2darray, &
+!          get_value_ptr_double_scalar
      procedure :: get_value_at_indices_int => sine_get_at_indices_int
      procedure :: get_value_at_indices_float => sine_get_at_indices_float
      procedure :: get_value_at_indices_double => sine_get_at_indices_double
@@ -1115,7 +1117,7 @@ contains
 
   ! Get a reference to a real-valued variable, flattened.
   function sine_get_ptr_float(this, name, dest_ptr) result (bmi_status)
-    class (bmi_sine), intent(in) :: this
+    class (bmi_sine), intent(in), target :: this
     character (len=*), intent(in) :: name
     real, pointer, intent(inout) :: dest_ptr(:)
     integer :: bmi_status
@@ -1123,7 +1125,32 @@ contains
     integer :: n_elements
 
     select case(name)
+    case("sinevalue")
+       src = c_loc( this%model%sinevalue )
+       call c_f_pointer( src, dest_ptr, [ 1 ] )
+       bmi_status = BMI_SUCCESS
+    case("t")
+       src = c_loc( this%model%t )
+       call c_f_pointer( src, dest_ptr, [ 1 ] )
+       bmi_status = BMI_SUCCESS
+    case("dt")
+       src = c_loc( this%model%dt )
+       call c_f_pointer( src, dest_ptr, [ 1 ] )
+       bmi_status = BMI_SUCCESS
+    case("t_end")
+       src = c_loc( this%model%t_end )
+       call c_f_pointer( src, dest_ptr, [ 1 ] )
+       bmi_status = BMI_SUCCESS
+    case("alpha")
+       src = c_loc( this%model%alpha )
+       call c_f_pointer( src, dest_ptr, [ 1 ] )
+       bmi_status = BMI_SUCCESS
+    case("sine2d")
+       src = c_loc( this%model%sine2d(1,1) )
+       call c_f_pointer( src, dest_ptr, [size(this%model%sine2d)] )
+       bmi_status = BMI_SUCCESS
     case default
+       dest_ptr => null()
        bmi_status = BMI_FAILURE
     end select
   end function sine_get_ptr_float
@@ -1163,8 +1190,8 @@ contains
 !    end select
 !  end function sine_get_ptr_double
 
-  function sine_get_ptr_double_1darray(this, name, dest_ptr) result (bmi_status)
-    class (bmi_sine), intent(in) :: this
+  function sine_get_ptr_double(this, name, dest_ptr) result (bmi_status)
+    class (bmi_sine), intent(in), target :: this
     character (len=*), intent(in) :: name
     double precision, pointer, intent(inout) :: dest_ptr(:)
     integer :: bmi_status
@@ -1173,57 +1200,93 @@ contains
 
     select case(name)
     case("sinevalue_tmp")
-       !have to allocate space here becaue you can not point to a allocatable
-       !variable. Maybe use pointers in sine.f90?
-       !caller has to destory this memory allocation, otherwise there is a
-       ! memory leak.
-       !
-       allocate( dest_ptr, source=this%model%sinevalue_tmp )
-!       dest_ptr => this%model%sinevalue_tmp
-       bmi_status = BMI_SUCCESS
-    case default
-       bmi_status = BMI_FAILURE
-    end select
-  end function sine_get_ptr_double_1darray
-
-  function sine_get_ptr_double_2darray(this, name, dest_ptr) result (bmi_status)
-    class (bmi_sine), intent(in) :: this
-    character (len=*), intent(in) :: name
-    double precision, pointer, intent(inout) :: dest_ptr(:,:)
-    integer :: bmi_status
-    type (c_ptr) :: src
-    integer :: n_elements
-
-    select case(name)
-    case("sine2d_ptr")
-       dest_ptr => this%model%sine2d_ptr
+!       src = c_loc( this%model%sinevalue_tmp(1) )
+!       call c_f_pointer( src, dest_ptr, [ size( this%model%sinevalue_tmp ) ] )
+        dest_ptr => this%model%sinevalue_tmp
        bmi_status = BMI_SUCCESS
     case("double2d")
-
-       !have to allocate space here becaue you can not point to a allocatable
-       !variable. Maybe use pointers in sine.f90?
-       !caller has to destory this memory allocation, otherwise there is a
-       ! memory leak.
-       allocate( dest_ptr, source=this%model%double2d )
+       src = c_loc( this%model%double2d(1,1) )
+       call c_f_pointer( src, dest_ptr, [ size( this%model%double2d ) ] )
+    case("sine2d_ptr")
+       src = c_loc( this%model%sine2d_ptr(1,1) )
+       call c_f_pointer( src, dest_ptr, [ size( this%model%sine2d_ptr ) ] )
        bmi_status = BMI_SUCCESS
     case default
        bmi_status = BMI_FAILURE
     end select
-  end function sine_get_ptr_double_2darray
+  end function sine_get_ptr_double
 
-  function sine_get_ptr_double_scalar(this, name, dest_ptr) result (bmi_status)
-    class (bmi_sine), intent(in) :: this
-    character (len=*), intent(in) :: name
-    double precision, pointer, intent(inout) :: dest_ptr
-    integer :: bmi_status
-    type (c_ptr) :: src
-    integer :: n_elements
-
-    select case(name)
-    case default
-       bmi_status = BMI_FAILURE
-    end select
-  end function sine_get_ptr_double_scalar
+!  function sine_get_ptr_double_1darray(this, name, dest_ptr) result (bmi_status)
+!    class (bmi_sine), intent(in), target :: this
+!    character (len=*), intent(in) :: name
+!    double precision, pointer, intent(inout) :: dest_ptr(:)
+!    integer :: bmi_status
+!    type (c_ptr) :: src
+!    integer :: n_elements
+!
+!    select case(name)
+!    case("sinevalue_tmp")
+!       !have to allocate space here becaue you can not point to a allocatable
+!       !variable. Maybe use pointers in sine.f90?
+!       !caller has to destory this memory allocation, otherwise there is a
+!       ! memory leak.
+!       !
+!       src = c_loc( this%model%sinevalue_tmp(1) )
+!
+!       call c_f_pointer( src, dest_ptr, [ size( this%model%sinevalue_tmp ) ] )
+!       !allocate( dest_ptr, source=this%model%sinevalue_tmp )
+!!       dest_ptr => this%model%sinevalue_tmp
+!       bmi_status = BMI_SUCCESS
+!    case("double2d")
+!       src = c_loc( this%model%double2d(1,1) )
+!       call c_f_pointer( src, dest_ptr, [ size( this%model%double2d ) ] )
+!    case("sine2d_ptr")
+!       src = c_loc( this%model%sine2d_ptr(1,1) )
+!       call c_f_pointer( src, dest_ptr, [ size( this%model%sine2d_ptr ) ] )
+!       bmi_status = BMI_SUCCESS
+!    case default
+!       bmi_status = BMI_FAILURE
+!    end select
+!  end function sine_get_ptr_double_1darray
+!
+!  function sine_get_ptr_double_2darray(this, name, dest_ptr) result (bmi_status)
+!    class (bmi_sine), intent(in) :: this
+!    character (len=*), intent(in) :: name
+!    double precision, pointer, intent(inout) :: dest_ptr(:,:)
+!    integer :: bmi_status
+!    type (c_ptr) :: src
+!    integer :: n_elements
+!
+!    select case(name)
+!    case("sine2d_ptr")
+!       dest_ptr => this%model%sine2d_ptr
+!       bmi_status = BMI_SUCCESS
+!    case("double2d")
+!
+!       !have to allocate space here becaue you can not point to a allocatable
+!       !variable. Maybe use pointers in sine.f90?
+!       !caller has to destory this memory allocation, otherwise there is a
+!       ! memory leak.
+!       allocate( dest_ptr, source=this%model%double2d )
+!       bmi_status = BMI_SUCCESS
+!    case default
+!       bmi_status = BMI_FAILURE
+!    end select
+!  end function sine_get_ptr_double_2darray
+!
+!  function sine_get_ptr_double_scalar(this, name, dest_ptr) result (bmi_status)
+!    class (bmi_sine), intent(in) :: this
+!    character (len=*), intent(in) :: name
+!    double precision, pointer, intent(inout) :: dest_ptr
+!    integer :: bmi_status
+!    type (c_ptr) :: src
+!    integer :: n_elements
+!
+!    select case(name)
+!    case default
+!       bmi_status = BMI_FAILURE
+!    end select
+!  end function sine_get_ptr_double_scalar
 
   ! Get values of an integer variable at the given locations.
   function sine_get_at_indices_int(this, name, dest, inds) &
@@ -1612,7 +1675,7 @@ contains
     use, intrinsic:: iso_c_binding, only: c_ptr, c_loc, c_int
     implicit none
     type(c_ptr) :: this ! If not value, then from the C perspective `this` is a void**
-    type(bmi_sine), pointer :: bmi_model
+    type(bmi_sine), pointer :: bmi_model => null()
     integer(kind=c_int) :: bmi_status
 
     call c_f_pointer(this, bmi_model)
@@ -1622,6 +1685,7 @@ contains
     else
       bmi_status = bmi_model%finalize()
       deallocate( bmi_model )
+      nullify( bmi_model )
       bmi_status = BMI_SUCCESS
     endif
   end function bmi_destroy
@@ -1668,6 +1732,12 @@ contains
    if( .not. associated( f_this ) ) then
     bmi_status = BMI_FAILURE
    else
+!
+!    this will results in  double free spaces
+!    if ( associated( f_this%ptr ) ) then
+!       deallocate( f_this%ptr )
+!       nullify( f_this%ptr )
+!    endif
     deallocate( f_this ) 
     bmi_status = BMI_SUCCESS
    endif

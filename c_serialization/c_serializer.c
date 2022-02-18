@@ -3,7 +3,7 @@
   * ----------------------------------------------
   * auther: Zhengtao Cui
   * created on Feb. 1, 2022
-  * Last date of modification: Feb 10, 2022
+  * Last date of modification: Feb 18, 2022
   * Reference: https://github.com/NOAA-OWP/cfe.git
   *            test_serialize/serialize_state.c
   *
@@ -12,6 +12,8 @@
   *              the exporsed Fortran BMI procedures by ISO C Binding. 
   *              It requries the msgpack-c library for serialization.
   * 		 
+  * 		 Added code to use get_value_ptr_* functions for float
+  * 		 and double data type variables.
   */
 
 #include <dlfcn.h>
@@ -27,6 +29,10 @@
 #include "iso_c_bmif_2_0.h"
 #include "ut_trim.h"
 
+/*
+ * This function does the actual work of serialize the model to a file
+ * using the msgpack-c library. 
+ */
 int c_serialize_states(void** box_handle, const char* ser_file )
 {
     /* declare the pointer variabls for various data types 
@@ -37,6 +43,7 @@ int c_serialize_states(void** box_handle, const char* ser_file )
     short* shorttemp = (short*)NULL;
     long* longtemp = (long*)NULL;
     float* floattemp = (float*)NULL;
+    float** floatfloattemp = (float**)NULL;
     double* doubletemp = (double*)NULL;
     double** doubledoubletemp = (double**)NULL;
     bool* booltemp = (bool*)NULL;
@@ -177,14 +184,27 @@ int c_serialize_states(void** box_handle, const char* ser_file )
 	   * pre-allocate space becasue we will use get_value_* functions
 	   * the values will be copied into this space.
 	   */
-          floattemp  = (float*)malloc( var_length * sizeof(float) );
-	  status = get_value_float(box_handle, cnames[i], floattemp );
+          //floattemp  = (float*)malloc( var_length * sizeof(float) );
+	  //
+	  /*
+	   * Now we use the get_value_ptr_* function instead of the get_value_*
+	   * function. Allocate a pointer of pointer to hold the 
+	   * return pointer from Fortran. The allocation of the pointer
+	   * is not needed because we use the get_value_ptr function.
+	   */
+          floatfloattemp  = (float**)malloc( sizeof(float*) );
+	  
+	  //status = get_value_float(box_handle, cnames[i], floattemp );
+	  //
+	  //call the get_value_ptr function
+	  status = get_value_ptr_float(box_handle, cnames[i], floatfloattemp );
 	  for ( int j = 0; j < var_length; ++j )
 	  {
-//              printf("       %s[%d] = %f \n", cnames[i], j, floattemp[j] );
-              msgpack_pack_float(&pk, floattemp[j] );
+              printf("       %s[%d] = %f \n", cnames[i], j, floatfloattemp[0][j] );
+              msgpack_pack_float(&pk, floatfloattemp[0][j] );
 	  }
-	  free(floattemp);
+	  //free(floattemp);
+	  free(floatfloattemp);
       }
       else if ( strcmp(type, "real8" ) == 0 )
       {
@@ -196,7 +216,7 @@ int c_serialize_states(void** box_handle, const char* ser_file )
 	  * we need a double** type here.
 	  */
           doubledoubletemp  = (double**)malloc( sizeof(double*) );
-	  
+/*	  
 	  status = get_var_grid(box_handle, cnames[i], &var_grid );
 	  if ( var_grid == 0 )
 	  {
@@ -208,17 +228,19 @@ int c_serialize_states(void** box_handle, const char* ser_file )
 	  }
 	  else if (var_grid == 2 )
 	  {
-	    status = get_value_ptr_double_2darray(box_handle, cnames[i], doubledoubletemp );
+	    status = get_value_ptr_double_1darray(box_handle, cnames[i], doubledoubletemp );
 	  }
 	  else
 	  {
               printf("      c_serialize_states unknown grid: %d\n", var_grid );
 	      exit(1);
 	  }
-//	  status = get_value_ptr_double(box_handle, cnames[i], doubledoubletemp );
+*/
+	  status = get_value_ptr_double(box_handle, cnames[i], doubledoubletemp );
 	  for ( int j = 0; j < var_length; ++j )
 	  {
               printf("       %s[%d] = %f \n", cnames[i], j, doubledoubletemp[0][j] );
+	      //write to the file 
               msgpack_pack_double(&pk, doubledoubletemp[0][j] );
 	  }
 	  //
@@ -226,19 +248,19 @@ int c_serialize_states(void** box_handle, const char* ser_file )
 	  //This isn't ideal, here the variable name should not be known.
 	  //There are other better ways to do it.
 	  //Just demonstrate that we can use get_value_ptr function.
-	  if ( strcmp(cnames[i], "double2d") == 0 ||
-               strcmp(cnames[i], "sinevalue_tmp" ) == 0 ) 
-	  {
-   	       free(doubledoubletemp[0]);
-	  }
+	  //if ( strcmp(cnames[i], "double2d") == 0 ||
+          //     strcmp(cnames[i], "sinevalue_tmp" ) == 0 ) 
+	  //if ( strcmp(cnames[i], "double2d") == 0 )
+	  //{
+   	  //     free(doubledoubletemp[0]);
+	  //}
 	  free(doubledoubletemp);
       }
       else if ( strcmp(type, "logical" ) == 0 )
       {
 	 /*
-	  * Here we use the get_value_ptr_* function instead of the 
-	  * get_value_* function. Because Fortran argument is pass-by-reference,
-	  * we need a double** type here.
+	  * pre-allocate space becasue we will use get_value_* functions
+	  * the values will be copied into this space.
 	  */
           booltemp  = (bool*)malloc( var_length * sizeof(bool) );
 	  status = get_value_logical(box_handle, cnames[i], (bool*)booltemp );
@@ -260,16 +282,14 @@ int c_serialize_states(void** box_handle, const char* ser_file )
       else if ( strcmp(type, "character" ) == 0 )
       {
 	 /*
-	  * Here we use the get_value_ptr_* function instead of the 
-	  * get_value_* function. Because Fortran argument is pass-by-reference,
-	  * we need a double** type here.
-	  *
 	  * Doesn't work for string arrays, only use string, ie. char arrays
 	  * here
 	  */
           temp  = (char*)malloc( var_length * sizeof(char) );
 	  status = get_value_string(box_handle, cnames[i], temp );
 //          printf("       %s = %s \n", cnames[i], temp );
+//
+          //call the msgpack-c functions.
           msgpack_pack_str(&pk, var_length - 1 );
           msgpack_pack_str_body(&pk, temp, var_length - 1 );
 	  free(temp);

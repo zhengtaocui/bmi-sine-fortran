@@ -1,3 +1,16 @@
+/** ----------------------------------------------
+  * c_model_compare.c
+  * ----------------------------------------------
+  * auther: Zhengtao Cui
+  * created on Feb. 1, 2022
+  * Last date of modification: Feb 18, 2022
+  * Reference: https://github.com/NOAA-OWP/cfe.git
+  *            test_serialize/serialize_state.c
+  *
+  * Description: Compare every state from two bmi model objects.
+  * 		 return 1 on the first non-matching state. Return 0 when
+  * 		 all states match.
+  */
 #include <dlfcn.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -47,8 +60,11 @@ int c_model_compare(void** box_handle1, void** box_handle2 )
 
     status = get_var_names(box_handle1, role, names);
     strcpy(cnames[0], names[0]);
+    //compare each model state
     for ( int i = 0; i < var_count; ++i )
     {
+      //such that we can access the variable name in C fashion, i.e., 
+      //cnames[i].
       cnames[0][2048 *(i+1) -1 ] = '\0';
       cnames[i]  = &cnames[0][i * 2048];
       ut_trim( cnames[i] );

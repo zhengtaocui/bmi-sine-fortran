@@ -1,13 +1,15 @@
-! The Basic Model Interface ISO_C_BINDINGING compatible free functions
+! The `serializer` Interface ISO_C_BINDINGING compatible free functions
 !
-! @author: Nels Frazier
-! @email: nels.frazier@noaa.gov
-! Date: August 23, 2021
+! @author: Zhengtao Cui
+! @email: Zhengtao.Cui@noaa.gov
+! Date: Feb 18, 2022
 !
 ! This module provides a set of ISO_C_BINDING compatable functions
-! that allow a Fortran BMI compatible model to interoperate with a C program, given that the
-! BMI module implelements a `register` function that is able to return an appropriate opaque handle
+! that allow a Fortran serializer to interoperate with a C program, 
+! given that the drivered subclass of `serializer` implelements a `register` 
+! function that is able to return an appropriate opaque handle
 ! to the C caller.
+!
 
 module iso_c_serialization
   use, intrinsic :: iso_c_binding, only: c_ptr, c_loc, c_f_pointer, c_char, c_null_char, c_int, c_double, c_float
@@ -17,13 +19,18 @@ module iso_c_serialization
 
   integer, parameter :: SER_MAX_FILE_NAME = 2048
 
+  !
+  !This `serializer_adapter` wrapper is necessary becasue the `serializer` is
+  ! an abstract class and can not be instantiated, the concrete subclass of
+  ! this abstract class is not known at this stage.
+  !
   type serializer_adapter
     class(serializer), pointer :: ptr => null()
   end type
 
   contains
 
-    ! 
+    ! the serialize function iso C binding
     function serialize(this, model_in, ser_file) result(bmi_status) bind(C, name="serialize")
       type(c_ptr) :: this, model_in
       character(kind=c_char, len=1), dimension(SER_MAX_FILE_NAME), intent(in) :: ser_file
@@ -46,6 +53,7 @@ module iso_c_serialization
       deallocate(f_ser_file)
     end function serialize
 
+    ! the deserialize function iso C binding
     function deserialize(this, model_out, ser_file) result(bmi_status) bind(C, name="deserialize")
       type(c_ptr) :: this, model_out
       character(kind=c_char, len=1), dimension(SER_MAX_FILE_NAME), intent(in) :: ser_file
@@ -68,6 +76,7 @@ module iso_c_serialization
       deallocate(f_ser_file)
     end function deserialize
 
+    ! the model compare function iso C binding
     function compare(this, model1, model2) result(bmi_status) bind(C, name="compare")
       type(c_ptr) :: this, model1, model2
       integer(kind=c_int) :: bmi_status

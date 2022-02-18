@@ -1,3 +1,15 @@
+! ----------------------------------------------
+! serializer.f90
+! ----------------------------------------------
+! auther: Zhengtao Cui
+! created on Jan. 5, 2022
+! Last date of modification: Feb 18, 2022
+! Reference: 
+!
+! Description: Define the abstract 'serializer' class. 
+!              Define a serialize, a deserialize and a model compare
+!              functions, which will be implemented by a concrete subclass.
+! 		 
 module serialization
 
   use, intrinsic :: iso_c_binding, only: c_ptr, c_loc, c_f_pointer
