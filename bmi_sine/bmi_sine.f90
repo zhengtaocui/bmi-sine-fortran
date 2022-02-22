@@ -1117,6 +1117,8 @@ contains
 
   ! Get a reference to a real-valued variable, flattened.
   function sine_get_ptr_float(this, name, dest_ptr) result (bmi_status)
+    !Note the `target` attribute here, it is necessary, othewise, pointer of
+    ! non-pointer type of the `bmi_sine` components cannot be obtained.
     class (bmi_sine), intent(in), target :: this
     character (len=*), intent(in) :: name
     real, pointer, intent(inout) :: dest_ptr(:)
@@ -1191,6 +1193,8 @@ contains
 !  end function sine_get_ptr_double
 
   function sine_get_ptr_double(this, name, dest_ptr) result (bmi_status)
+    !Note the `target` attribute here, it is necessary, othewise, pointer of
+    ! non-pointer type of the `bmi_sine` components cannot be obtained.
     class (bmi_sine), intent(in), target :: this
     character (len=*), intent(in) :: name
     double precision, pointer, intent(inout) :: dest_ptr(:)
