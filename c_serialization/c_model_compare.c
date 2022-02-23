@@ -24,7 +24,7 @@
 #include "iso_c_bmif_2_0.h"
 #include "ut_trim.h"
 
-int c_model_compare(void** box_handle1, void** box_handle2 )
+int c_model_compare(void* box_handle1, void* box_handle2 )
 {
     char* temp = (char*)NULL;
     char* temp2 = (char*)NULL;

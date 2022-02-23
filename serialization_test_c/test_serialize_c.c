@@ -83,7 +83,7 @@ int main(int argc, char** argv)
     /*
      * initialize the first model
      */
-    status = initialize(&box_handle, config_file);
+    status = initialize(box_handle, config_file);
     check_status(&status, "model1 initialize");
 
     /*
@@ -98,27 +98,27 @@ int main(int argc, char** argv)
     /*
      * initialize the second model
      */
-    status = initialize(&box_handle2, config_file);
+    status = initialize(box_handle2, config_file);
     check_status(&status, "model2 initialize");
 
     /*
      * component name of model 1
      */
-    status = get_component_name(&box_handle, name);
+    status = get_component_name(box_handle, name);
     check_status(&status, "get_component_name");
     printf( "component name: %s\n", name);
 
     /*
      * get start time
      */
-    status = get_start_time(&box_handle, &start_time);
+    status = get_start_time(box_handle, &start_time);
     check_status(&status, "get_start_time");
     printf( "start time: %f\n", start_time);
 
     /*
      * get end time
      */
-    status = get_end_time(&box_handle, &end_time);
+    status = get_end_time(box_handle, &end_time);
     check_status(&status, "get_end_time");
     printf( "end time: %f\n", end_time);
 
@@ -128,16 +128,16 @@ int main(int argc, char** argv)
     current_time = start_time;
     while( current_time <= pause_time )
     {
-      status = update(&box_handle);
+      status = update(box_handle);
       check_status(&status, "update");
-      status = get_current_time(&box_handle, &current_time);
+      status = get_current_time(box_handle, &current_time);
       check_status(&status, "get_current_time");
       printf( "current time: %f\n", current_time);
     }
 
     printf( "Before serializing, comparing two models ...\n" );
 
-    status = compare( &serializer_adapter_handle, &box_handle, &box_handle2 );
+    status = compare( serializer_adapter_handle, box_handle, box_handle2 );
     if ( status != BMI_SUCCESS )
     {
        printf( "Comparing failed! Model1 is not equal to Model2!\n" );
@@ -149,15 +149,15 @@ int main(int argc, char** argv)
     printf( "Done comparing before serializing.\n" );
 
     printf( "Now serialize the first model ... \n" );
-    status = serialize( &serializer_adapter_handle, &box_handle, ser_file );
+    status = serialize( serializer_adapter_handle, box_handle, ser_file );
     check_status(&status, "serialize");
 
     printf( "Now deserialize the first model to the second model... \n" );
-    status = deserialize( &serializer_adapter_handle, &box_handle2, ser_file );
+    status = deserialize( serializer_adapter_handle, box_handle2, ser_file );
     check_status(&status, "deserialize");
 
     printf( "After deserializing, comparing two models ...\n" );
-    status = compare( &serializer_adapter_handle, &box_handle, &box_handle2 );
+    status = compare( serializer_adapter_handle, box_handle, box_handle2 );
     if ( status != BMI_SUCCESS )
     {
        printf( "Comparing failed! Model1 is not equal to Model2!\n" );
@@ -175,9 +175,9 @@ int main(int argc, char** argv)
      */
     while( current_time <= end_time )
     {
-      status = update(&box_handle);
+      status = update(box_handle);
       check_status(&status, "update");
-      status = get_current_time(&box_handle, &current_time);
+      status = get_current_time(box_handle, &current_time);
       check_status(&status, "get_current_time");
       printf( "current time: %f\n", current_time);
     }
@@ -185,19 +185,19 @@ int main(int argc, char** argv)
     /*
      * Run model 2 to end
      */
-    status = get_current_time(&box_handle2, &current_time);
+    status = get_current_time(box_handle2, &current_time);
     check_status(&status, "get_current_time model 2");
     while( current_time <= end_time )
     {
-      status = update(&box_handle2);
+      status = update(box_handle2);
       check_status(&status, "update model 2");
-      status = get_current_time(&box_handle2, &current_time);
+      status = get_current_time(box_handle2, &current_time);
       check_status(&status, "get_current_time");
       printf( "current time: %f\n", current_time);
     }
 
     printf( "After running to end, comparing two models ...\n" );
-    status = compare( &serializer_adapter_handle, &box_handle, &box_handle2 );
+    status = compare( serializer_adapter_handle, box_handle, box_handle2 );
     if ( status != BMI_SUCCESS )
     {
        printf( "Comparing failed! Model1 is not equal to Model2!\n" );

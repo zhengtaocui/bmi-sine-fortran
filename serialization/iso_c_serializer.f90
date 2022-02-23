@@ -32,7 +32,7 @@ module iso_c_serialization
 
     ! the serialize function iso C binding
     function serialize(this, model_in, ser_file) result(bmi_status) bind(C, name="serialize")
-      type(c_ptr) :: this, model_in
+      type(c_ptr), value :: this, model_in
       character(kind=c_char, len=1), dimension(SER_MAX_FILE_NAME), intent(in) :: ser_file
       !character(kind=c_char, len=1), dimension(2048), intent(in) :: ser_file
       integer(kind=c_int) :: bmi_status
@@ -55,7 +55,7 @@ module iso_c_serialization
 
     ! the deserialize function iso C binding
     function deserialize(this, model_out, ser_file) result(bmi_status) bind(C, name="deserialize")
-      type(c_ptr) :: this, model_out
+      type(c_ptr), value :: this, model_out
       character(kind=c_char, len=1), dimension(SER_MAX_FILE_NAME), intent(in) :: ser_file
       !character(kind=c_char, len=1), dimension(2048), intent(in) :: ser_file
       integer(kind=c_int) :: bmi_status
@@ -78,7 +78,7 @@ module iso_c_serialization
 
     ! the model compare function iso C binding
     function compare(this, model1, model2) result(bmi_status) bind(C, name="compare")
-      type(c_ptr) :: this, model1, model2
+      type(c_ptr), value :: this, model1, model2
       integer(kind=c_int) :: bmi_status
       !use a wrapper for c interop
       type(serializer_adapter), pointer :: ser_adptr

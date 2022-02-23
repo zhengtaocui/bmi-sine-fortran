@@ -33,7 +33,7 @@
  * This function does the actual work of serialize the model to a file
  * using the msgpack-c library. 
  */
-int c_serialize_states(void** box_handle, const char* ser_file )
+int c_serialize_states(void* box_handle, const char* ser_file )
 {
     /* declare the pointer variabls for various data types 
      * supported.

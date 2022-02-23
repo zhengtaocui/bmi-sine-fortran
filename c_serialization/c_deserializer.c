@@ -30,7 +30,7 @@
  * read (deserialize) model states from a given model serailze file and
  * populate the mdoel object with the states. 
  */
-int c_deserialize_states(void** box_handle, const char* ser_file )
+int c_deserialize_states(void* box_handle, const char* ser_file )
 {
     /*
      * temporary memory spaces
