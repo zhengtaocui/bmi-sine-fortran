@@ -76,8 +76,13 @@ module bmisinef
           get_value_string, &
           get_value_logical
      procedure :: get_value_ptr_int => sine_get_ptr_int
+     procedure :: get_value_ptr_int1 => sine_get_ptr_int1
+     procedure :: get_value_ptr_int2 => sine_get_ptr_int2
+     procedure :: get_value_ptr_int8 => sine_get_ptr_int8
+     procedure :: get_value_ptr_logical => sine_get_ptr_logical
      procedure :: get_value_ptr_float => sine_get_ptr_float
      procedure :: get_value_ptr_double => sine_get_ptr_double
+     procedure :: get_value_ptr_string => sine_get_ptr_string
      !procedure :: get_value_ptr_double_1darray => sine_get_ptr_double_1darray
      !procedure :: get_value_ptr_double_2darray => sine_get_ptr_double_2darray
      !procedure :: get_value_ptr_double_scalar => sine_get_ptr_double_scalar
@@ -1089,7 +1094,7 @@ contains
 
   ! Get a reference to an integer-valued variable, flattened.
  function sine_get_ptr_int(this, name, dest_ptr) result (bmi_status)
-    class (bmi_sine), intent(in) :: this
+    class (bmi_sine), intent(in), target :: this
     character (len=*), intent(in) :: name
     integer, pointer, intent(inout) :: dest_ptr(:)
 !    integer, pointer, intent(inout) :: dest_ptr
@@ -1098,22 +1103,89 @@ contains
     integer :: n_elements
 
     select case(name)
-!    case("id")
-!       dest_ptr => this%model%id
-!       bmi_status = BMI_SUCCESS
-!    case("n_x")
-!       dest_ptr => this%model%n_x
-!       bmi_status = BMI_SUCCESS
-!    case("n_y")
-!       dest_ptr => this%model%n_y
-!       bmi_status = BMI_SUCCESS
-!    case("int2d")
-!       dest_ptr => this%model%int2d
-!       bmi_status = BMI_SUCCESS
+    case("id")
+       src = c_loc( this%model%id )
+       call c_f_pointer( src, dest_ptr, [ 1 ] )
+       bmi_status = BMI_SUCCESS
+    case("n_x")
+       src = c_loc( this%model%n_x )
+       call c_f_pointer( src, dest_ptr, [ 1 ] )
+       bmi_status = BMI_SUCCESS
+    case("n_y")
+       src = c_loc( this%model%n_y )
+       call c_f_pointer( src, dest_ptr, [ 1 ] )
+       bmi_status = BMI_SUCCESS
+    case("int2d")
+       src = c_loc( this%model%int2d(1,1) )
+       call c_f_pointer( src, dest_ptr, [size(this%model%int2d)] )
+       bmi_status = BMI_SUCCESS
     case default
        bmi_status = BMI_FAILURE
     end select
   end function sine_get_ptr_int
+
+ function sine_get_ptr_int1(this, name, dest_ptr) result (bmi_status)
+    class (bmi_sine), intent(in), target :: this
+    character (len=*), intent(in) :: name
+    integer(kind=1), pointer, intent(inout) :: dest_ptr(:)
+!    integer, pointer, intent(inout) :: dest_ptr
+    integer :: bmi_status
+    type (c_ptr) :: src
+    integer :: n_elements
+
+    select case(name)
+    case default
+       bmi_status = BMI_FAILURE
+    end select
+  end function sine_get_ptr_int1
+
+ function sine_get_ptr_int2(this, name, dest_ptr) result (bmi_status)
+    class (bmi_sine), intent(in), target :: this
+    character (len=*), intent(in) :: name
+    integer(kind=2), pointer, intent(inout) :: dest_ptr(:)
+!    integer, pointer, intent(inout) :: dest_ptr
+    integer :: bmi_status
+    type (c_ptr) :: src
+    integer :: n_elements
+
+    select case(name)
+    case default
+       bmi_status = BMI_FAILURE
+    end select
+  end function sine_get_ptr_int2
+
+ function sine_get_ptr_int8(this, name, dest_ptr) result (bmi_status)
+    class (bmi_sine), intent(in), target :: this
+    character (len=*), intent(in) :: name
+    integer(kind=8), pointer, intent(inout) :: dest_ptr(:)
+!    integer, pointer, intent(inout) :: dest_ptr
+    integer :: bmi_status
+    type (c_ptr) :: src
+    integer :: n_elements
+
+    select case(name)
+    case default
+       bmi_status = BMI_FAILURE
+    end select
+  end function sine_get_ptr_int8
+
+ function sine_get_ptr_logical(this, name, dest_ptr) result (bmi_status)
+    class (bmi_sine), intent(in), target :: this
+    character (len=*), intent(in) :: name
+    logical, pointer, intent(inout) :: dest_ptr(:)
+!    integer, pointer, intent(inout) :: dest_ptr
+    integer :: bmi_status
+    type (c_ptr) :: src
+    integer :: n_elements
+
+    select case(name)
+    case("logvar")
+       dest_ptr => this%model%logvar
+       bmi_status = BMI_SUCCESS
+    case default
+       bmi_status = BMI_FAILURE
+    end select
+  end function sine_get_ptr_logical
 
   ! Get a reference to a real-valued variable, flattened.
   function sine_get_ptr_float(this, name, dest_ptr) result (bmi_status)
@@ -1291,6 +1363,25 @@ contains
 !       bmi_status = BMI_FAILURE
 !    end select
 !  end function sine_get_ptr_double_scalar
+
+  function sine_get_ptr_string(this, name, dest_ptr) result (bmi_status)
+    !Note the `target` attribute here, it is necessary, othewise, pointer of
+    ! non-pointer type of the `bmi_sine` components cannot be obtained.
+    class (bmi_sine), intent(in), target :: this
+    character (len=*), intent(in) :: name
+    character(len=:), pointer, intent(inout) :: dest_ptr
+    integer :: bmi_status
+    type (c_ptr) :: src
+    integer :: n_elements
+
+    select case(name)
+    case("description")
+       dest_ptr => this%model%description
+       bmi_status = BMI_SUCCESS
+    case default
+       bmi_status = BMI_FAILURE
+    end select
+  end function sine_get_ptr_string
 
   ! Get values of an integer variable at the given locations.
   function sine_get_at_indices_int(this, name, dest, inds) &

@@ -224,7 +224,7 @@ int c_deserialize_states(void* box_handle, const char* ser_file )
           strcpy(temp, (char*)unpacked.data.via.array.ptr );
 	  //set the null character to mark the end of the C string
 	  temp[ var_length - 1] = '\0';
-//          printf("       %s = %s \n", cnames[i], temp );
+          printf("       %s = %s \n", cnames[i], temp );
           //restore the value to the model
 	  set_value_string(box_handle, cnames[i], temp);
 	  //cleaning up
