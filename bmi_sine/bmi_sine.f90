@@ -166,51 +166,51 @@ module bmisinef
 
   type(variable), dimension(STATE_VAR_NAME_COUNT) :: &
           var_info = (/variable(1, 't', 'real', 1, &
-                                'no_set', 'DIMENSIONLESS', &
+                                'not_set', 'DIMENSIONLESS', &
                                 'node', 0 ),               &
                       variable(2, 'alpha', 'real', 1, &
-                                'no_set', 'm^2/s', &
+                                'not_set', 'm^2/s', &
                                 'node', 0 ),                &
                       variable(3, 'dt', 'real', 1, &
-                                'no_set', 'DIMENSIONLESS', &
+                                'not_set', 'DIMENSIONLESS', &
                                 'node', 0 ),               &
                       variable(4, 't_end', 'real', 1, &
-                                'no_set', 'DIMENSIONLESS', &
+                                'not_set', 'DIMENSIONLESS', &
                                 'node', 0 ),               &
                       variable(5, 'n_x', 'integer', 1, &
-                                'no_set', 'DIMENSIONLESS', &
+                                'not_set', 'DIMENSIONLESS', &
                                 'node', 0 ),               &
                       variable(6, 'n_y', 'integer', 1, &
-                                'no_set', 'DIMENSIONLESS', &
+                                'not_set', 'DIMENSIONLESS', &
                                 'node', 0 ),               &
                       variable(7, 'id', 'integer', 1, &
-                                'no_set', 'DIMENSIONLESS', &
+                                'not_set', 'DIMENSIONLESS', &
                                 'node', 0 ),               &
                       variable(8, 'sinevalue', 'real', 1, &
-                                'no_set', 'DIMENSIONLESS', &
+                                'not_set', 'DIMENSIONLESS', &
                                 'node', 0 ),               &
                       variable(9, 'sinevalue_tmp', 'real*8', 1, &
-                                'no_set', 'DIMENSIONLESS', &
+                                'not_set', 'DIMENSIONLESS', &
                                 'node', 1 ),               &
                       variable(10, 'sine2d', 'real', 1, &
-                                'no_set', 'DIMENSIONLESS', &
+                                'not_set', 'DIMENSIONLESS', &
                                 'node', 2 ),               &
                       variable(11, 'sine2d_ptr', 'real*8', 1, &
-                                'no_set', 'DIMENSIONLESS', &
+                                'not_set', 'DIMENSIONLESS', &
                                 'node', 2 ),               &
                       variable(12, 'description', 'character', &
                                   MAX_STRING_LENGTH, &
-                                'no_set', 'DIMENSIONLESS', &
+                                'not_set', 'DIMENSIONLESS', &
                                 'node', 1 ),               &
                       variable(13, 'logvar', 'logical', &
                                   1, &
-                                'no_set', 'DIMENSIONLESS', &
+                                'not_set', 'DIMENSIONLESS', &
                                 'node', 1 ),               &
                       variable(14, 'int2d', 'integer', 1, &
-                                'no_set', 'DIMENSIONLESS', &
+                                'not_set', 'DIMENSIONLESS', &
                                 'node', 2 ),               &
                       variable(15, 'double2d', 'real*8', 1, &
-                                'no_set', 'DIMENSIONLESS', &
+                                'not_set', 'DIMENSIONLESS', &
                                 'node', 2 ) /)
 
       interface get_type_and_kind
