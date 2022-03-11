@@ -10,6 +10,7 @@
   * Description: test program for the the CFE C version of the 
   *             serialization/deserialization code in 
   *             https://github.com/NOAA-OWP/cfe.git
+  * Last modified on March 9, 2022. Added test code for C CFE model
   */
 #include <dlfcn.h>
 #include <stdio.h>
@@ -19,6 +20,7 @@
 #include "bmi_fortran.h"
 #include "serialize_state.h"
 #include "test_fortran_model.h"
+#include "test_c_cfe_model.h"
 
 int main(int argc, char** argv)
 {
@@ -28,4 +30,7 @@ int main(int argc, char** argv)
 
    printf("Done testing the Fortran BMI model!\n");
 
+   status = test_c_cfe_model();
+
+   printf("Done testing the C BMI model (CFE)!\n");
 }

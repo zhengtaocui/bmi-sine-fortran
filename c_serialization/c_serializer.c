@@ -81,34 +81,48 @@ int c_serialize_states(void* box_handle, const char* ser_file )
      */
     names = malloc( sizeof(char*));
     cnames = malloc( var_count * sizeof(char*));
-    cnames[0] = malloc( 2048 * var_count * sizeof(char) );
+    /*Now the get_var_names copies the names to the given array of strings
+     * The following is not needed.
+     */
+    //cnames[0] = malloc( 2048 * var_count * sizeof(char) );
+    for ( int i = 0; i < var_count; ++i )
+    {
+       cnames[i] = malloc( 2048  * sizeof(char) );
+    }
 
     /*
      * get variable names in an array
      */
-    status = get_var_names(box_handle, role, names);
+    status = get_var_names(box_handle, role, cnames);
+
+    /*Now the get_var_names copies the names to the given array of strings
+     * The following is not needed.
+     */
     /*
      * names points to a memory allocated by the Fortran model,
      * copy it to cnames to manuplate
      */
-    strcpy(cnames[0], names[0]);
+//    strcpy(cnames[0], names[0]);
     /*
      * loop throught all variables
      */
     for ( int i = 0; i < var_count; ++i )
     {
+    /*Now the get_var_names copies the names to the given array of strings
+     * The following is not needed.
+     */
       /*
        * set the null char to terminate the string
        */
-      cnames[0][2048 *(i+1) -1 ] = '\0';
+ //     cnames[0][2048 *(i+1) -1 ] = '\0';
       /*
        * each name has a length of 2048 chars
        */
-      cnames[i]  = &cnames[0][i * 2048];
+//      cnames[i]  = &cnames[0][i * 2048];
       /*
        * remove white spaces
        */
-      ut_trim( cnames[i] );
+//      ut_trim( cnames[i] );
 //      printf( "names[ %d ] = %s \n", i, cnames[i] );
 
       /*
@@ -323,7 +337,11 @@ int c_serialize_states(void* box_handle, const char* ser_file )
     /*
      * clean allocated spaces
      */
-    free(cnames[0]);
+    for ( int i = 0; i < var_count; ++i )
+    {
+       free( cnames[i] );
+    }
+    //free(cnames[0]);
     free(cnames);
     free(names);
     fclose(fp);

@@ -56,18 +56,28 @@ int c_model_compare(void* box_handle1, void* box_handle2 )
 
     names = malloc( sizeof(char*));
     cnames = malloc( var_count * sizeof(char*));
-    cnames[0] = malloc( 2048 * var_count * sizeof(char) );
+    /*Now the get_var_names copies the names to the given array of strings
+     * The following is not needed.
+     */
+//    cnames[0] = malloc( 2048 * var_count * sizeof(char) );
+    for ( int i = 0; i < var_count; ++i )
+    {
+       cnames[i] = malloc( 2048  * sizeof(char) );
+    }
 
-    status = get_var_names(box_handle1, role, names);
-    strcpy(cnames[0], names[0]);
+    status = get_var_names(box_handle1, role, cnames);
+//    strcpy(cnames[0], names[0]);
     //compare each model state
     for ( int i = 0; i < var_count; ++i )
     {
+    /*Now the get_var_names copies the names to the given array of strings
+     * The following is not needed.
+     */
       //such that we can access the variable name in C fashion, i.e., 
       //cnames[i].
-      cnames[0][2048 *(i+1) -1 ] = '\0';
-      cnames[i]  = &cnames[0][i * 2048];
-      ut_trim( cnames[i] );
+//      cnames[0][2048 *(i+1) -1 ] = '\0';
+//      cnames[i]  = &cnames[0][i * 2048];
+//      ut_trim( cnames[i] );
 //      printf( "names[ %d ] = %s \n", i, cnames[i] );
 
       status = get_var_length(box_handle1, cnames[i], &var_length);
@@ -254,7 +264,11 @@ int c_model_compare(void* box_handle1, void* box_handle2 )
     }
 
 
-    free(cnames[0]);
+    for ( int i = 0; i < var_count; ++i )
+    {
+       free(cnames[i]);
+    }
+    //free(cnames[0]);
     free(cnames);
     free(names);
 

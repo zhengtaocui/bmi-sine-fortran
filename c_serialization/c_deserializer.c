@@ -82,19 +82,29 @@ int c_deserialize_states(void* box_handle, const char* ser_file )
 
     names = malloc( sizeof(char*));
     cnames = malloc( var_count * sizeof(char*));
+    /*Now the get_var_names copies the names to the given array of strings
+     * The following is not needed.
+     */
     //2048 is the BMI_MAX_VARIABLE_NAME  defined in bmi.f90
-    cnames[0] = malloc( 2048 * var_count * sizeof(char) );
-
-    status = get_var_names(box_handle, role, names);
-    //copy variable names to a temporary memory location
-    strcpy(cnames[0], names[0]);
+ //   cnames[0] = malloc( 2048 * var_count * sizeof(char) );
     for ( int i = 0; i < var_count; ++i )
     {
+       cnames[i] = malloc( 2048  * sizeof(char) );
+    }
+
+    status = get_var_names(box_handle, role, cnames);
+    //copy variable names to a temporary memory location
+//    strcpy(cnames[0], names[0]);
+    for ( int i = 0; i < var_count; ++i )
+    {
+    /*Now the get_var_names copies the names to the given array of strings
+     * The following is not needed.
+     */
       
       //for accessing the variable names in a C array fashion
-      cnames[0][2048 *(i+1) -1 ] = '\0';
-      cnames[i]  = &cnames[0][i * 2048];
-      ut_trim( cnames[i] );
+//      cnames[0][2048 *(i+1) -1 ] = '\0';
+//      cnames[i]  = &cnames[0][i * 2048];
+//      ut_trim( cnames[i] );
 //      printf( "names[ %d ] = %s \n", i, cnames[i] );
 
       //get the variable length
@@ -237,7 +247,11 @@ int c_deserialize_states(void* box_handle, const char* ser_file )
     }
 
     //cleaning up
-    free(cnames[0]);
+    for ( int i = 0; i < var_count; ++i )
+    {
+       free( cnames[i] );
+    }
+    //free(cnames[0]);
     free(cnames);
     free(names);
     fclose(fp);

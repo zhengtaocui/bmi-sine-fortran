@@ -63,9 +63,14 @@ https://blog.gypsyengineer.com/en/security/msgpack-fuzzing.html
 //
 // Last modified by Zhengtao Cui on Mar. 7, 2022
 //
-// Minor revision to include Fortran BMI model types such that it can be
+// Description: Minor revision to include Fortran BMI model types such that 
+// it can be
 // used by Fortran BMI models, including integer1, integer2, interger4,
 // integer8, real4, real8, character and logical.
+//
+// Last modified by Zhengtao Cui on Mar. 7, 2022
+//
+// Description: Bug fixes for C models.
 //
 int get_file_size(const char *ser_file, unsigned long int *file_size){
 
@@ -477,7 +482,7 @@ int serialize(Bmi* model1, const char *ser_file) {
             //---------------------------------------
             // This state var is an array or string
             //---------------------------------------
-            if (strcmp(type, "string") == 0){
+            if (strcmp(type, "string") == 0 || strcmp(type, "character") == 0){
                 msgpack_pack_str(&pk, length);
             } else if (strcmp(type, "char") == 0){
                 msgpack_pack_str(&pk, length);
@@ -542,6 +547,7 @@ int serialize(Bmi* model1, const char *ser_file) {
                     b_val ? msgpack_pack_true(&pk) : msgpack_pack_false(&pk);
 	       	}
             } else if (strcmp(type, "char") == 0){
+	        printf( " serialize: %s = %s\n", names[i], ptr_list[i] ); 
                 // Note:  Need ptr_list[i] without * here.
                 msgpack_pack_str_body(&pk, ptr_list[i], length);     
             } else if (strcmp(type, "FILE") == 0){
@@ -783,22 +789,33 @@ int deserialize_to_state(const char *ser_file, Bmi* model2, int print_obj) {
 		 * This works.
 		 */
                 for (int j=0; j<length; j++){
-                  sval[j] = (char)obj.via.array.ptr[j].via.i64;
+                  //sval[j] = (char)obj.via.array.ptr[j].via.i64;
+                  sval[j] = (char)obj.via.str.ptr[j];
 		}
 		//not sure if this is needed.
-		sval[ length - 1] = '\0';
+		//sval[ length - 1] = '\0';
 		printf("deserialize: %s = %s\n", name, sval );
                 model2->set_value(model2, name, sval );
                 free(sval);
             //--------------------------------------------------
-            } else if (strcmp(type, "char") == 0 || strcmp(type, "integer1") == 0){
+            } else if (strcmp(type, "char") == 0 ){
                 sval  = (char*)malloc( length * sizeof(char) );
 		//this is an array, the following line is incorrect.
                 //ptr = obj.via.array.ptr;
                 for (int j=0; j<length; j++){
+                  sval[j] = (char)obj.via.str.ptr[j];
+		}
+		printf("deserialize: %s = %s\n", name, sval );
+                model2->set_value(model2, name, sval );
+                free(sval);
+            } else if ( strcmp(type, "integer1") == 0){
+
+                sval  = (char*)malloc( length * sizeof(char) );
+                for (int j=0; j<length; j++){
                   sval[j] = (char)obj.via.array.ptr[j].via.i64;
 		}
-                model2->set_value(model2, name, ptr );
+		printf("deserialize: %s = %s\n", name, sval );
+                model2->set_value(model2, name, sval );
                 free(sval);
             //--------------------------------------------------            
             } else if (strcmp(type, "int") == 0 || strcmp(type, "integer4") == 0){

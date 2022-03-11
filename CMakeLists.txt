@@ -9,6 +9,7 @@ set(serializer_name serializerf)
 set(c_serializer_name serializerc)
 set(bmi_name bmi${model_name})
 set(cfe_c_serializer cfecserial)
+set(bmi_cfe_name bmi_cfe)
 
 # Determine the Fortran BMI version.
 if(DEFINED ENV{BMIF_VERSION})
@@ -45,6 +46,7 @@ add_subdirectory(serialization_test_c)
 add_subdirectory(c_serialization_test)
 add_subdirectory(cfe_c_serializer)
 add_subdirectory(test_cfe_c_serializer)
+add_subdirectory(cfe)
 #add_subdirectory(examples)
 
 include(CTest)

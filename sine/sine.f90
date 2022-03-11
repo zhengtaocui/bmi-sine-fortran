@@ -1,4 +1,13 @@
-! An example of the sine equation.
+! ----------------------------------------------
+! bmi_sine.f90
+! ----------------------------------------------
+! auther: Zhengtao Cui
+! created on Jan. 5, 2022
+! Last date of modification: Feb 18, 2022
+! Reference: 
+!
+! Description: An example of a Fortran model using the sine equation.
+!
 module sinef
 
   implicit none

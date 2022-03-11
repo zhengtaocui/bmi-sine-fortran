@@ -1,3 +1,14 @@
+! ----------------------------------------------
+! bmi_sine.f90
+! ----------------------------------------------
+! auther: Zhengtao Cui
+! created on Jan. 5, 2022
+! Last date of modification: Feb 18, 2022
+! Reference: 
+!
+! Description: Implemented the dummy 'sine' Fortran model using the
+!              Fortran BMI interfaces.
+! 		 
 module bmisinef
 
   use sinef
@@ -83,16 +94,15 @@ module bmisinef
      procedure :: get_value_ptr_float => sine_get_ptr_float
      procedure :: get_value_ptr_double => sine_get_ptr_double
      procedure :: get_value_ptr_string => sine_get_ptr_string
-     !procedure :: get_value_ptr_double_1darray => sine_get_ptr_double_1darray
-     !procedure :: get_value_ptr_double_2darray => sine_get_ptr_double_2darray
-     !procedure :: get_value_ptr_double_scalar => sine_get_ptr_double_scalar
      generic :: get_value_ptr => &
           get_value_ptr_int, &
+          get_value_ptr_int1, &
+          get_value_ptr_int2, &
+          get_value_ptr_int8, &
           get_value_ptr_float, &
-          get_value_ptr_double
-!          get_value_ptr_double_1darray, &
-!          get_value_ptr_double_2darray, &
-!          get_value_ptr_double_scalar
+          get_value_ptr_double, &
+          get_value_ptr_string, &
+          get_value_ptr_logical
      procedure :: get_value_at_indices_int => sine_get_at_indices_int
      procedure :: get_value_at_indices_float => sine_get_at_indices_float
      procedure :: get_value_at_indices_double => sine_get_at_indices_double
@@ -1230,40 +1240,6 @@ contains
   end function sine_get_ptr_float
 
  ! ! Get a reference to an double-valued variable, flattened.
- ! function sine_get_ptr_double(this, name, dest_ptr) result (bmi_status)
- !   class (bmi_sine), intent(in) :: this
- !   character (len=*), intent(in) :: name
- !   double precision, pointer, intent(inout) :: dest_ptr(:)
- !   integer :: bmi_status
- !   type (c_ptr) :: src
- !   integer :: n_elements
-!
-!    select case(name)
-!    case("sinevalue_tmp")
-!       ! This function allocate spaces for the pointer type.
-!       ! In an ideal case, we should set the pointer to the variable directly 
-!       ! without allocating additional spaces. However, you can only set a
-!       ! pointer to a pointer or fixed size variales, not the allocatable
-!       ! variables. The 1d array pointer here can also not be pointed to a
-!       ! scalar or array with dimension other than 1d.
-!       ! It should be remembered to deallocate the additional space after
-!       ! calling this function.
-!       allocate( dest_ptr( size(this%model%sinevalue_tmp ) ) )
-!       dest_ptr = this%model%sinevalue_tmp
-!       bmi_status = BMI_SUCCESS
-!    case("sine2d_ptr")
-!       allocate( dest_ptr( size(this%model%sine2d_ptr) ) )
-!       dest_ptr = reshape(this%model%sine2d_ptr, [size(this%model%sine2d_ptr)])
-!       bmi_status = BMI_SUCCESS
-!    case("double2d")
-!       allocate( dest_ptr( size(this%model%double2d) ) )
-!       dest_ptr = reshape(this%model%double2d, [size(this%model%double2d)])
-!       bmi_status = BMI_SUCCESS
-!    case default
-!       bmi_status = BMI_FAILURE
-!    end select
-!  end function sine_get_ptr_double
-
   function sine_get_ptr_double(this, name, dest_ptr) result (bmi_status)
     !Note the `target` attribute here, it is necessary, othewise, pointer of
     ! non-pointer type of the `bmi_sine` components cannot be obtained.
@@ -1291,78 +1267,6 @@ contains
        bmi_status = BMI_FAILURE
     end select
   end function sine_get_ptr_double
-
-!  function sine_get_ptr_double_1darray(this, name, dest_ptr) result (bmi_status)
-!    class (bmi_sine), intent(in), target :: this
-!    character (len=*), intent(in) :: name
-!    double precision, pointer, intent(inout) :: dest_ptr(:)
-!    integer :: bmi_status
-!    type (c_ptr) :: src
-!    integer :: n_elements
-!
-!    select case(name)
-!    case("sinevalue_tmp")
-!       !have to allocate space here becaue you can not point to a allocatable
-!       !variable. Maybe use pointers in sine.f90?
-!       !caller has to destory this memory allocation, otherwise there is a
-!       ! memory leak.
-!       !
-!       src = c_loc( this%model%sinevalue_tmp(1) )
-!
-!       call c_f_pointer( src, dest_ptr, [ size( this%model%sinevalue_tmp ) ] )
-!       !allocate( dest_ptr, source=this%model%sinevalue_tmp )
-!!       dest_ptr => this%model%sinevalue_tmp
-!       bmi_status = BMI_SUCCESS
-!    case("double2d")
-!       src = c_loc( this%model%double2d(1,1) )
-!       call c_f_pointer( src, dest_ptr, [ size( this%model%double2d ) ] )
-!    case("sine2d_ptr")
-!       src = c_loc( this%model%sine2d_ptr(1,1) )
-!       call c_f_pointer( src, dest_ptr, [ size( this%model%sine2d_ptr ) ] )
-!       bmi_status = BMI_SUCCESS
-!    case default
-!       bmi_status = BMI_FAILURE
-!    end select
-!  end function sine_get_ptr_double_1darray
-!
-!  function sine_get_ptr_double_2darray(this, name, dest_ptr) result (bmi_status)
-!    class (bmi_sine), intent(in) :: this
-!    character (len=*), intent(in) :: name
-!    double precision, pointer, intent(inout) :: dest_ptr(:,:)
-!    integer :: bmi_status
-!    type (c_ptr) :: src
-!    integer :: n_elements
-!
-!    select case(name)
-!    case("sine2d_ptr")
-!       dest_ptr => this%model%sine2d_ptr
-!       bmi_status = BMI_SUCCESS
-!    case("double2d")
-!
-!       !have to allocate space here becaue you can not point to a allocatable
-!       !variable. Maybe use pointers in sine.f90?
-!       !caller has to destory this memory allocation, otherwise there is a
-!       ! memory leak.
-!       allocate( dest_ptr, source=this%model%double2d )
-!       bmi_status = BMI_SUCCESS
-!    case default
-!       bmi_status = BMI_FAILURE
-!    end select
-!  end function sine_get_ptr_double_2darray
-!
-!  function sine_get_ptr_double_scalar(this, name, dest_ptr) result (bmi_status)
-!    class (bmi_sine), intent(in) :: this
-!    character (len=*), intent(in) :: name
-!    double precision, pointer, intent(inout) :: dest_ptr
-!    integer :: bmi_status
-!    type (c_ptr) :: src
-!    integer :: n_elements
-!
-!    select case(name)
-!    case default
-!       bmi_status = BMI_FAILURE
-!    end select
-!  end function sine_get_ptr_double_scalar
 
   function sine_get_ptr_string(this, name, dest_ptr) result (bmi_status)
     !Note the `target` attribute here, it is necessary, othewise, pointer of
