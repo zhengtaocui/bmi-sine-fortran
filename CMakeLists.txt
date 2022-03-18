@@ -5,10 +5,10 @@ cmake_minimum_required(VERSION 3.0)
 project(bmi-sine-fortran Fortran C)
 
 set(model_name sinef)
-set(serializer_name serializerf)
-set(c_serializer_name serializerc)
+set(Method1and2_name Method1and2)
+set(Method3_name Method3)
 set(bmi_name bmi${model_name})
-set(cfe_c_serializer cfecserial)
+set(Method4_name Method4)
 set(bmi_cfe_name bmi_cfe)
 
 # Determine the Fortran BMI version.

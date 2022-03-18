@@ -2,15 +2,15 @@
 
 # Create shared library, except on Windows.
 if(WIN32)
-  add_library(${serializer_name} serializer.f90 state_serializer.f90 iso_c_serializer.f90 ut_trim.h ut_trim.c c_wrapper_test.c c_serialize.c c_deserialize.c serializer.h)
+	add_library(${Method1and2_name} serializer.f90 state_serializer.f90 iso_c_serializer.f90 ut_trim.h ut_trim.c c_wrapper_test.c c_serialize.c c_deserialize.c serializer.h)
 else()
-  add_library(${serializer_name} SHARED serializer.f90 state_serializer.f90 iso_c_serializer.f90 ut_trim.h ut_trim.c c_wrapper_test.c c_serialize.c c_deserialize.c serializer.h)
+	add_library(${Method1and2_name} SHARED serializer.f90 state_serializer.f90 iso_c_serializer.f90 ut_trim.h ut_trim.c c_wrapper_test.c c_serialize.c c_deserialize.c serializer.h)
 endif()
 
-target_link_libraries(${serializer_name} ${bmif_lib} ${msgpackc_lib})
+target_link_libraries(${Method1and2_name} ${bmif_lib} ${msgpackc_lib})
 
 install(
-  TARGETS ${serializer_name}
+  TARGETS ${Method1and2_name}
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
   RUNTIME DESTINATION bin
