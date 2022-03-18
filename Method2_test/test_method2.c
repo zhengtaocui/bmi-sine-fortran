@@ -197,6 +197,12 @@ int main(int argc, char** argv)
     }
 
     printf( "After running to end, comparing two models ...\n" );
+    /*
+     * This is the compare_states function in state_serializer.f90. 
+     * see iso_c_serializer.f90
+     * Because we use the ISO C binding function here, a separate
+     * compare function in C is not needed.
+     */
     status = compare( serializer_adapter_handle, box_handle, box_handle2 );
     if ( status != BMI_SUCCESS )
     {

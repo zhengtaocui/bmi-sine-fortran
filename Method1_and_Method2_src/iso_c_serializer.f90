@@ -76,6 +76,10 @@ module iso_c_serialization
       deallocate(f_ser_file)
     end function deserialize
 
+    !
+    ! This can be called directly in C programs. A separate
+    ! C function is not needed.
+    !
     ! the model compare function iso C binding
     function compare(this, model1, model2) result(bmi_status) bind(C, name="compare")
       type(c_ptr), value :: this, model1, model2
