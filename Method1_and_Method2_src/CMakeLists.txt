@@ -29,10 +29,10 @@ install(
   DESTINATION include
 )
 install(
-  FILES ${CMAKE_SOURCE_DIR}/serialization/serializer.h
+  FILES ${CMAKE_SOURCE_DIR}/Method1_and_Method2_src/serializer.h
   DESTINATION include
 )
 install(
-  FILES ${CMAKE_SOURCE_DIR}/serialization/ut_trim.h
+  FILES ${CMAKE_SOURCE_DIR}/Method1_and_Method2_src/ut_trim.h
   DESTINATION include
 )

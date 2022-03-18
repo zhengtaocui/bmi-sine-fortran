@@ -1,6 +1,6 @@
 include(CTest)
 
-include_directories(${CMAKE_Fortran_MODULE_DIRECTORY} ${CMAKE_SOURCE_DIR}/serialization ${CMAKE_SOURCE_DIR}/include)
+include_directories(${CMAKE_Fortran_MODULE_DIRECTORY} ${CMAKE_SOURCE_DIR}/include)
 
 function(make_test test_name)
   add_test(NAME ${test_name} COMMAND ${test_name})
@@ -11,9 +11,13 @@ endfunction(make_test)
 make_test(test_cfe_c_serializer)
 
 file(
+  COPY ${CMAKE_CURRENT_SOURCE_DIR}/sample.cfg
+  DESTINATION ${CMAKE_BINARY_DIR}/Method4_test)
+
+file(
   COPY ${CMAKE_CURRENT_SOURCE_DIR}/cat89_01Dec2015.csv
-  DESTINATION ${CMAKE_BINARY_DIR}/test_cfe_c_serializer)
+  DESTINATION ${CMAKE_BINARY_DIR}/Method4_test)
 
 file(
   COPY ${CMAKE_CURRENT_SOURCE_DIR}/cat_89_bmi_config_cfe.txt
-  DESTINATION ${CMAKE_BINARY_DIR}/test_cfe_c_serializer)
+  DESTINATION ${CMAKE_BINARY_DIR}/Method4_test)

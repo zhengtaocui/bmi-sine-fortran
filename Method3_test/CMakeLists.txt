@@ -1,6 +1,6 @@
 include(CTest)
 
-include_directories(${CMAKE_Fortran_MODULE_DIRECTORY} ${CMAKE_SOURCE_DIR}/serialization ${CMAKE_SOURCE_DIR}/c_serialization)
+include_directories(${CMAKE_Fortran_MODULE_DIRECTORY} ${CMAKE_SOURCE_DIR}/Method3_src)
 
 function(make_test test_name)
   add_test(NAME ${test_name} COMMAND ${test_name})
@@ -12,4 +12,4 @@ make_test(c_serialization_test)
 
 file(
   COPY ${CMAKE_CURRENT_SOURCE_DIR}/sample.cfg
-  DESTINATION ${CMAKE_BINARY_DIR}/c_serialization_test)
+  DESTINATION ${CMAKE_BINARY_DIR}/Method3_test)

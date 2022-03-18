@@ -1,18 +1,17 @@
 # bmi-sine-fortran
-A minimal BMI Fortran model using the Sine function
+A minimal BMI Fortran model using the Sine function to explore Fortran BMI serialization approaches.
 
 It dependents on the bmi-fortran and msgpack-c library.
 
-Here, we explored 4 approaches to implement a model serialiser for BMI Fortran models. Each approach has its own pros and cons. A testing code is also included to test these approaches using the mimial dummy 
-Fortran BMI model. Here are the 4 approaches,
+Here, we explored 4 methods to implement a model serialiser for BMI Fortran models. Each method will be evaluated based on its own pros and cons. A testing case for each method is also included to test these approaches using the mimial dummy Fortran BMI model. Here is a brief description of these 4 methods,
 
-Approach 1: Using Fortran and msgpack-c for serialization/deserialiation of the model states. Testing program is also in Fortran. C language is only used when calling msgpack-c procedures.
+Method 1: Using codes in Fortran language and msgpack-c library to serialize and deserialize the model states. The application program program should also use Fortran. C language is only used when the Fortran serializer/deserializer interacts with msgpack-c APIs.
 
-Approach 2: Using Fortran and msgpack-c for serialization/deserialization of the model states, but created C wrappers using ISO C binding for those Fortran serialization/deserialization codes, such the they can be used by C/C++ framework code. The testing code is in C language.
+Method 2: Using codes in Fortran language and msgpack-c library to serialize/deserialize the model states. C wrappers functions using ISO C binding were developed for those Fortran serialization/deserialization codes. Thereforre, the serialization/deserialization codes developed in Fortran can be utialized by C/C++ framework code. A test case developed in C language is incldued to demonstrate how these ISO C Binding APIs can be used in the NextGen framework.
 
-Approach 3: Using C language for serialization/deserialization of the Fortran model states. The Fortran BMI ISO C binding codes are needed by the C serializer to run, get and set Fortran model. The testing code is in C.
+Method 3: Using codes in C language to serialize/deserialize the Fortran model states. ISO C binding codes for Fortran BMI are needed by the C serializer/deserializer to run the Fortran, get and set model properties. A test case using C language was included.
 
-Approach 4: Using the C serialization/deserialization code created for the CFE model at https://github.com/NOAA-OWP/cfe.git/test_serialize/serialize_state.c to serialize/deserialize the Fortran model states. C wrappers for the BMI ISO C binding codes are used to create the compatiable C BMI struct object for CFE. The testing code is in C. 
+Method 4: This method combine the C serialization/deserialization code developed for the C CFE model at https://github.com/NOAA-OWP/cfe.git/test_serialize/serialize_state.c with the serialization code developed in Method 3. Therefore, both C and Fortran BMI models can use the same serialization/deserialization codes developed in this approach. For this method to work, C wrapper codes for the BMI ISO C binding codes are necessary to create compatiable C BMI struct objects between C and Fortran models. The test case is programed in C language. 
 
 Explaination of directories structures:
 
@@ -20,19 +19,23 @@ sine -- The minimal dummy Fortran model with testing data and program.
 
 bmi_sine -- The Fortran BMI implementation of of the 'sine' model with testing data and program.
 
-serialization -- The Fortran version of serialization/deserialzation code, i.e. Approach 1, and it's C wrapper codes, i.e., Approach 2.
+examples -- Example configuration files for the Sine model.
 
-serialization_tests -- Testing data and program for Approach 1.
+cfe -- The CFE model code and its C BMI code. 
 
-serialization_test_c -- Testing data and program for Approach 2.
+Method1_and_Method2_src -- Source codes of the Fortran version of serialization/deserialzation code, i.e. Method 1, and it's C wrapper codes, i.e., Method 2.
 
-c_serialization -- The version that uses C language to serialize/deserialize the Fortran model states, i.e., Approach 3.
+Method1_test -- Test data and program for Method 1.
 
-c_serialization_c -- Testing data and program for Approach 3.
+Method2_test -- Test data and program for Method 2.
 
-cfe_serializer -- The C serialize/deserialize code for CFE, i.e., Approach 4.
+Method3_src -- The source code that uses C language to serialize/deserialize the Fortran model states, i.e., Method 3.
 
-test_cfe_c_serializer -- Testing data and program for Approach 4.
+Method3_test -- Testing data and program for Method 3.
+
+Method4_src -- The combined C serialize/deserialize code from both Method 3 and  the CFE serialization code, i.e., Method 4.
+
+Method4_test -- Test data and program for Method 4.
 
 include -- Include files.
 
@@ -56,3 +59,5 @@ make
 make install
 
 cd ../
+
+Note: The CMAKE_INSTALL_PREFIX variable should point to the same install directory of the bmi-fortran package.

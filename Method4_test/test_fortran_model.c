@@ -71,7 +71,7 @@ int test_fortran_model()
     /*
      * Registering Fortran model 1
      */
-    register_bmi_fortran( model1, box_handle );
+    create_bmi_fortran_model_handel( model1, box_handle );
 
     /*
      * initialize the first model
@@ -91,7 +91,7 @@ int test_fortran_model()
     /*
      * Registering Fortran model 2
      */
-    register_bmi_fortran( model2, box_handle2 );
+    create_bmi_fortran_model_handel( model2, box_handle2 );
     /*
      * initialize the second model
      */

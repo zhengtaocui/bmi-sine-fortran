@@ -13,4 +13,4 @@ make_test(test_serialize_c)
 
 file(
   COPY ${CMAKE_CURRENT_SOURCE_DIR}/sample.cfg
-  DESTINATION ${CMAKE_BINARY_DIR}/serialization_test_c)
+  DESTINATION ${CMAKE_BINARY_DIR}/Method2_test)
