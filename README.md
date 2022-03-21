@@ -9,9 +9,9 @@ Method 1: Using codes in Fortran language and msgpack-c library to serialize and
 
 Method 2: Using codes in Fortran language and msgpack-c library to serialize/deserialize the model states. C wrappers functions using ISO C binding were developed for those Fortran serialization/deserialization codes. Thereforre, the serialization/deserialization codes developed in Fortran can be utialized by C/C++ framework code. A test case developed in C language is incldued to demonstrate how these ISO C Binding APIs can be used in the NextGen framework.
 
-Method 3: Using codes in C language to serialize/deserialize the Fortran model states. ISO C binding codes for Fortran BMI are needed by the C serializer/deserializer to run the Fortran, get and set model properties. A test case using C language was included.
+Method 3: Using codes in C language to serialize/deserialize the Fortran model states. ISO C binding codes for Fortran BMI are needed by the C serializer/deserializer to run the Fortran, get and set model properties. A test case using C language was included. Here the serializer code uses get_value_* functions to retrieve the model states. This is a copy of the state values is returned.
 
-Method 4: This method combine the C serialization/deserialization code developed for the C CFE model at https://github.com/NOAA-OWP/cfe.git/test_serialize/serialize_state.c with the serialization code developed in Method 3. Therefore, both C and Fortran BMI models can use the same serialization/deserialization codes developed in this approach. For this method to work, C wrapper codes for the BMI ISO C binding codes are necessary to create compatiable C BMI struct objects between C and Fortran models. The test case is programed in C language. 
+Method 4: This method combine the C serialization/deserialization code developed for the C CFE model at https://github.com/NOAA-OWP/cfe.git/test_serialize/serialize_state.c with the serialization code developed in Method 3. Therefore, both C and Fortran BMI models can use the same serialization/deserialization codes developed in this approach. For this method to work, C wrapper codes for the BMI ISO C binding codes are necessary to create compatiable C BMI struct objects between C and Fortran models. The test case is programed in C language. Here the serializer code uses get_value_ptr_* functions to retrieve the model states. That is the pointers of the state values is returned.
 
 Explaination of directories structures:
 
@@ -61,3 +61,21 @@ make install
 cd ../
 
 Note: The CMAKE_INSTALL_PREFIX variable should point to the same install directory of the bmi-fortran package.
+
+How to run tests:
+
+Run Method 1 test:
+  cd _build/Method1_test
+  ./test_method1 ./sample.cfg
+
+Run Method 2 test:
+  cd _build/Method2_test
+  ./test_method2 ./sample.cfg
+
+Run Method 3 test:
+  cd _build/Method3_test
+  ./test_method3 ./sample.cfg
+
+Run Method 4 test:
+  cd _build/Method4_test
+  ./test_method4

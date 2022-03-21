@@ -60,18 +60,18 @@ int test_fortran_model()
     /*
      * The first model
      */
-    status = bmi_factory(&bmi_handle);
-    check_status(&status, "model1 factory");
+    status = get_bmi_handle(&bmi_handle);
+    check_status(&status, "get model1 handle");
 
-    status = c_create_box(&box_handle, &bmi_handle);
-    check_status(&status, "model1 create_box");
+    status = get_box_handle(&box_handle, &bmi_handle);
+    check_status(&status, "get model1 box handle");
 
     printf( "config file: %s\n", config_file);
 
     /*
      * Registering Fortran model 1
      */
-    create_bmi_fortran_model_handel( model1, box_handle );
+    create_bmi_fortran_model_handle( model1, box_handle );
 
     /*
      * initialize the first model
@@ -82,16 +82,16 @@ int test_fortran_model()
     /*
      * The second model
      */
-    status = bmi_factory(&bmi_handle2);
+    status = get_bmi_handle(&bmi_handle2);
     check_status(&status, "model2 factory");
 
-    status = c_create_box(&box_handle2, &bmi_handle2);
+    status = get_box_handle(&box_handle2, &bmi_handle2);
     check_status(&status, "model2 create_box");
 
     /*
      * Registering Fortran model 2
      */
-    create_bmi_fortran_model_handel( model2, box_handle2 );
+    create_bmi_fortran_model_handle( model2, box_handle2 );
     /*
      * initialize the second model
      */
@@ -209,16 +209,16 @@ int test_fortran_model()
     /*
      * cleaning up
      */
-    status = bmi_destroy(&bmi_handle);
+    status = destroy_bmi_handle(&bmi_handle);
     check_status(&status, "destroy model 1");
 
-    status = c_delete_box(&box_handle);
+    status = destroy_box_handle(&box_handle);
     check_status(&status, "delete_box model 1 box");
 
-    status = bmi_destroy(&bmi_handle2);
+    status = destroy_bmi_handle(&bmi_handle2);
     check_status(&status, "destroy model 2");
 
-    status = c_delete_box(&box_handle2);
+    status = destroy_box_handle(&box_handle2);
     check_status(&status, "delete_box model 1 box");
 
     free(model1);

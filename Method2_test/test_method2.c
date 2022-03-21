@@ -63,19 +63,19 @@ int main(int argc, char** argv)
     /*
      *  create a serializer object
      */
-    status = serializer_factory(&serializer_handle);
+    status = get_serializer_handle(&serializer_handle);
     check_status(&status, "serializer factory");
 
-    status = c_create_adapter(&serializer_adapter_handle, &serializer_handle);
+    status = get_serializer_box(&serializer_adapter_handle, &serializer_handle);
     check_status(&status, "create adapter");
 
     /*
      * The first model
      */
-    status = bmi_factory(&bmi_handle);
+    status = get_bmi_handle(&bmi_handle);
     check_status(&status, "model1 factory");
 
-    status = c_create_box(&box_handle, &bmi_handle);
+    status = get_box_handle(&box_handle, &bmi_handle);
     check_status(&status, "model1 create_box");
 
     printf( "config file: %s\n", config_file);
@@ -89,10 +89,10 @@ int main(int argc, char** argv)
     /*
      * The second model
      */
-    status = bmi_factory(&bmi_handle2);
+    status = get_bmi_handle(&bmi_handle2);
     check_status(&status, "model2 factory");
 
-    status = c_create_box(&box_handle2, &bmi_handle2);
+    status = get_box_handle(&box_handle2, &bmi_handle2);
     check_status(&status, "model2 create_box");
 
     /*
@@ -216,25 +216,25 @@ int main(int argc, char** argv)
 
     //
     //cleaning up
-    status = serializer_destroy(&serializer_handle);
-    check_status(&status, "serializer destroy");
+    status = delete_serializer_handle(&serializer_handle);
+    check_status(&status, "delete serializer handle");
 
-    status = c_delete_adapter(&serializer_adapter_handle);
+    status = delete_serializer_box(&serializer_adapter_handle);
     check_status(&status, "delete adapter");
 
 //    status = finalize(&box_handle);
 //    check_status(&status, "finalize");
 
-    status = bmi_destroy(&bmi_handle);
+    status = destroy_bmi_handle(&bmi_handle);
     check_status(&status, "destroy model 1");
 
-    status = c_delete_box(&box_handle);
-    check_status(&status, "delete_box model 1 box");
+    status = destroy_box_handle(&box_handle);
+    check_status(&status, "destroy_box model 1 box");
 
-    status = bmi_destroy(&bmi_handle2);
+    status = destroy_bmi_handle(&bmi_handle2);
     check_status(&status, "destroy model 2");
 
-    status = c_delete_box(&box_handle2);
+    status = destroy_box_handle(&box_handle2);
     check_status(&status, "delete_box model 1 box");
 
 

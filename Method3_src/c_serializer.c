@@ -201,77 +201,51 @@ int c_serialize_states(void* box_handle, const char* ser_file )
 	   * pre-allocate space becasue we will use get_value_* functions
 	   * the values will be copied into this space.
 	   */
-          //floattemp  = (float*)malloc( var_length * sizeof(float) );
-	  //
+          floattemp  = (float*)malloc( var_length * sizeof(float) );
+	  
 	  /*
 	   * Now we use the get_value_ptr_* function instead of the get_value_*
 	   * function. Allocate a pointer of pointer to hold the 
 	   * return pointer from Fortran. The allocation of the pointer
 	   * is not needed because we use the get_value_ptr function.
 	   */
-          floatfloattemp  = (float**)malloc( sizeof(float*) );
+          //floatfloattemp  = (float**)malloc( sizeof(float*) );
 	  
-	  //status = get_value_float(box_handle, cnames[i], floattemp );
+	  status = get_value_float(box_handle, cnames[i], floattemp );
 	  //
 	  //call the get_value_ptr function
-	  status = get_value_ptr_float(box_handle, cnames[i], floatfloattemp );
+	  //status = get_value_ptr_float(box_handle, cnames[i], floatfloattemp );
 	  for ( int j = 0; j < var_length; ++j )
 	  {
-              printf("       %s[%d] = %f \n", cnames[i], j, floatfloattemp[0][j] );
-              msgpack_pack_float(&pk, floatfloattemp[0][j] );
+            //  printf("       %s[%d] = %f \n", cnames[i], j, floatfloattemp[0][j] );
+            //  msgpack_pack_float(&pk, floatfloattemp[0][j] );
+              msgpack_pack_float(&pk, floattemp[j] );
 	  }
-	  //free(floattemp);
-	  free(floatfloattemp);
+	  free(floattemp);
+	  //free(floatfloattemp);
       }
       else if ( strcmp(type, "real8" ) == 0 )
       {
-         // doubletemp  = (double*)malloc( var_length * sizeof(double) );
+          doubletemp  = (double*)malloc( var_length * sizeof(double) );
+	  status = get_value_double(box_handle, cnames[i], doubletemp );
 	 //
 	 /*
 	  * Here we use the get_value_ptr_* function instead of the 
 	  * get_value_* function. Because Fortran argument is pass-by-reference,
 	  * we need a double** type here.
 	  */
-          doubledoubletemp  = (double**)malloc( sizeof(double*) );
-/*	  
-	  status = get_var_grid(box_handle, cnames[i], &var_grid );
-	  if ( var_grid == 0 )
-	  {
-	    status = get_value_ptr_double_scalar(box_handle, cnames[i], doubledoubletemp );
-	  }
-	  else if ( var_grid == 1 )
-	  {
-	    status = get_value_ptr_double_1darray(box_handle, cnames[i], doubledoubletemp );
-	  }
-	  else if (var_grid == 2 )
-	  {
-	    status = get_value_ptr_double_1darray(box_handle, cnames[i], doubledoubletemp );
-	  }
-	  else
-	  {
-              printf("      c_serialize_states unknown grid: %d\n", var_grid );
-	      exit(1);
-	  }
-*/
-	  status = get_value_ptr_double(box_handle, cnames[i], doubledoubletemp );
+         // doubledoubletemp  = (double**)malloc( sizeof(double*) );
+	 // status = get_value_ptr_double(box_handle, cnames[i], doubledoubletemp );
 	  for ( int j = 0; j < var_length; ++j )
 	  {
-              printf("       %s[%d] = %f \n", cnames[i], j, doubledoubletemp[0][j] );
+              //printf("       %s[%d] = %f \n", cnames[i], j, doubledoubletemp[0][j] );
 	      //write to the file 
-              msgpack_pack_double(&pk, doubledoubletemp[0][j] );
+          //    msgpack_pack_double(&pk, doubledoubletemp[0][j] );
+              msgpack_pack_double(&pk, doubletemp[j] );
 	  }
 	  //
-	  //prevent memory leak
-	  //This isn't ideal, here the variable name should not be known.
-	  //There are other better ways to do it.
-	  //Just demonstrate that we can use get_value_ptr function.
-	  //if ( strcmp(cnames[i], "double2d") == 0 ||
-          //     strcmp(cnames[i], "sinevalue_tmp" ) == 0 ) 
-	  //if ( strcmp(cnames[i], "double2d") == 0 )
-	  //{
-   	  //     free(doubledoubletemp[0]);
-	  //}
-	  free(doubledoubletemp);
+	  //free(doubledoubletemp);
+	  free(doubletemp);
       }
       else if ( strcmp(type, "logical" ) == 0 )
       {
@@ -279,20 +253,21 @@ int c_serialize_states(void* box_handle, const char* ser_file )
 	  * pre-allocate space becasue we will use get_value_* functions
 	  * the values will be copied into this space.
 	  */
-          //booltemp  = (bool*)malloc( var_length * sizeof(bool) );
-	  //status = get_value_logical(box_handle, cnames[i], (bool*)booltemp );
+          booltemp  = (bool*)malloc( var_length * sizeof(bool) );
+	  status = get_value_logical(box_handle, cnames[i], (bool*)booltemp );
 	  /*
 	   * Now use the get_value_ptr_* version
 	   */
-          intinttemp  = (int**)malloc( sizeof(int*) );
+          //intinttemp  = (int**)malloc( sizeof(int*) );
 	  /*
 	   * the Fortran logical use 4 bytes
 	   */
-	  status = get_value_ptr_logical(box_handle, cnames[i], intinttemp );
+	 // status = get_value_ptr_logical(box_handle, cnames[i], intinttemp );
 	  for ( int j = 0; j < var_length; ++j )
 	  {
 //              printf("       %s[%d] = %d \n", cnames[i], j, booltemp[j] );
-	      if ( intinttemp[0][j] )
+	  //    if ( intinttemp[0][j] )
+	      if ( booltemp[j] )
 	      {
                 msgpack_pack_true(&pk );
 	      }
@@ -302,7 +277,8 @@ int c_serialize_states(void* box_handle, const char* ser_file )
 	      }
 
 	  }
-	  free(intinttemp);
+	  //free(intinttemp);
+	  free(booltemp);
       }
       else if ( strcmp(type, "character" ) == 0 )
       {
@@ -310,21 +286,24 @@ int c_serialize_states(void* box_handle, const char* ser_file )
 	  * Doesn't work for string arrays, only use string, ie. char arrays
 	  * here
 	  */
-      //    temp  = (char*)malloc( var_length * sizeof(char) );
-      //    status = get_value_string(box_handle, cnames[i], temp );
+          temp  = (char*)malloc( var_length * sizeof(char) );
+          status = get_value_string(box_handle, cnames[i], temp );
+          printf("       %s = %s \n", cnames[i], temp );
          /*
 	  * Now we try the get_value_ptr_* version
 	  */ 
-          charchartemp  = (char**)malloc( sizeof(char*) );
-	  status = get_value_ptr_string(box_handle, cnames[i], charchartemp );
-          ut_trim( charchartemp[0] );
-          printf("       %s = %s \n", cnames[i], charchartemp[0] );
+      //    charchartemp  = (char**)malloc( sizeof(char*) );
+      //  status = get_value_ptr_string(box_handle, cnames[i], charchartemp );
+      //    ut_trim( charchartemp[0] );
+      //    printf("       %s = %s \n", cnames[i], charchartemp[0] );
 
           //call the msgpack-c functions.
           msgpack_pack_str(&pk, var_length - 1 );
-          msgpack_pack_str_body(&pk, charchartemp[0], var_length - 1 );
+          //msgpack_pack_str_body(&pk, charchartemp[0], var_length - 1 );
+          msgpack_pack_str_body(&pk, temp, var_length - 1 );
 
-	  free(charchartemp);
+	  //free(charchartemp);
+	  free(temp);
       }
       else
       {

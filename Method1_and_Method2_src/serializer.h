@@ -2,10 +2,12 @@
 #define SERIALIZER_H
 
 
-extern int serializer_factory(void **);
-extern int serializer_destroy(void **);
-extern int c_create_adapter(void **, void **);
-extern int c_delete_adapter(void **);
+extern int get_serializer_handle(void **);
+extern int delete_serializer_handle(void **);
+extern int get_serializer_box(void **, void **);
+extern int delete_serializer_box(void **);
+extern int register_serializer(void **);
+extern int unregister_serializer(void **);
 
 extern int serialize(void **, void **, const char*);
 extern int deserialize(void **, void **, const char*);

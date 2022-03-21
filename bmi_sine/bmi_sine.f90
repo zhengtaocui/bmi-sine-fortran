@@ -1655,7 +1655,7 @@ contains
     call print_info(this%model)
   end subroutine print_model_info
 
-  function bmi_factory(this) result(bmi_status) bind(C, name="bmi_factory")
+  function get_bmi_handle(this) result(bmi_status) bind(C, name="get_bmi_handle")
     use, intrinsic:: iso_c_binding, only: c_ptr, c_loc, c_int
     implicit none
     type(c_ptr) :: this ! If not value, then from the C perspective `this` is a void**
@@ -1668,9 +1668,9 @@ contains
       this = c_loc(bmi_model)
       bmi_status = BMI_SUCCESS
     endif
-  end function bmi_factory
+  end function get_bmi_handle
 
-  function bmi_destroy(this) result(bmi_status) bind(C, name="bmi_destroy")
+  function destroy_bmi_handle(this) result(bmi_status) bind(C, name="destroy_bmi_handle")
     use, intrinsic:: iso_c_binding, only: c_ptr, c_loc, c_int
     implicit none
     type(c_ptr) :: this ! If not value, then from the C perspective `this` is a void**
@@ -1687,9 +1687,9 @@ contains
       nullify( bmi_model )
       bmi_status = BMI_SUCCESS
     endif
-  end function bmi_destroy
+  end function destroy_bmi_handle
 
-  function create_box(this, bmi_ptr) result(bmi_status) bind(C, name="c_create_box")
+  function get_box_handle(this, bmi_ptr) result(bmi_status) bind(C, name="get_box_handle")
    use, intrinsic:: iso_c_binding, only: c_ptr, c_loc, c_int
    use iso_c_bmif_2_0
    implicit none
@@ -1715,9 +1715,9 @@ contains
     this = c_loc(bmi_box)
     bmi_status = BMI_SUCCESS
    endif
- end function create_box
+ end function get_box_handle
 
-  function delete_box(this) result(bmi_status) bind(C, name="c_delete_box")
+  function destroy_box_handle(this) result(bmi_status) bind(C, name="destroy_box_handle")
    use, intrinsic:: iso_c_binding, only: c_ptr, c_loc, c_int
    use iso_c_bmif_2_0
    implicit none
@@ -1740,6 +1740,47 @@ contains
     deallocate( f_this ) 
     bmi_status = BMI_SUCCESS
    endif
- end function delete_box
+ end function destroy_box_handle
+
+  function register_bmi(this) result(bmi_status) bind(C, name="register_bmi")
+    use, intrinsic:: iso_c_binding, only: c_ptr, c_loc, c_int
+    implicit none
+    type(c_ptr), intent(out) :: this ! If not value, then from the C perspective `this` is a void**
+    type(c_ptr) :: bmi_ptr
+    integer(kind=c_int) :: bmi_status
+
+    bmi_status = get_bmi_handle( bmi_ptr )
+
+    if ( bmi_status .eq. BMI_FAILURE ) then 
+            return
+    end if
+    bmi_status = get_box_handle( this, bmi_ptr )
+
+  end function register_bmi
+
+  function unregister_bmi(this) result(bmi_status) bind(C, name="unregister_bmi")
+    use, intrinsic:: iso_c_binding, only: c_ptr, c_loc, c_int
+    use iso_c_bmif_2_0
+    implicit none
+    type(c_ptr), intent(inout) :: this ! If not value, then from the C perspective `this` is a void**
+    type(box), pointer :: bmi_box
+    integer(kind=c_int) :: bmi_status
+
+    call c_f_pointer( this, bmi_box )
+
+    if( .not. associated( bmi_box%ptr ) ) then
+      bmi_status = BMI_FAILURE
+    else
+      bmi_status = bmi_box%ptr%finalize()
+      deallocate( bmi_box%ptr )
+      nullify( bmi_box%ptr )
+      bmi_status = BMI_SUCCESS
+    endif
+
+    if ( bmi_status .eq. BMI_FAILURE ) then 
+            return
+    end if
+    bmi_status = destroy_box_handle( this )
+  end function unregister_bmi
 
 end module bmisinef

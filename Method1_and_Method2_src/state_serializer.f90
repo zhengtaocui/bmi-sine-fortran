@@ -901,8 +901,8 @@ contains
      !
      !create an object of the serializer
      !
-     function serializer_factory(this) result(bmi_status) &
-                                                 bind(C, name="serializer_factory")
+     function get_serializer_handle(this) result(bmi_status) &
+                                     bind(C, name="get_serializer_handle")
         use, intrinsic:: iso_c_binding, only: c_ptr, c_loc, c_int
         use bmif_2_0
         implicit none
@@ -916,12 +916,13 @@ contains
           this = c_loc(bmi_serializer)
           bmi_status = BMI_SUCCESS
         endif
-  end function serializer_factory
+  end function get_serializer_handle
 
 
   !
   !delete and cleanup space for the serializer object
-  function serializer_destroy(this) result(bmi_status) bind(C, name="serializer_destroy")
+  function delete_serializer_handle(this) result(bmi_status) bind(C, &
+                                      name="delete_serializer_handle")
     use, intrinsic:: iso_c_binding, only: c_ptr, c_loc, c_int
     use bmif_2_0
     implicit none
@@ -937,13 +938,13 @@ contains
       deallocate( bmi_serializer )
       bmi_status = BMI_SUCCESS
     endif
-  end function serializer_destroy
+  end function delete_serializer_handle
 
   !
   ! create the `serializer_adapter` object from the given pointer of 
   ! a serializer object
   !
-  function create_adapter(this, serializer_ptr) result(bmi_status) bind(C, name="c_create_adapter")
+  function get_serializer_box(this, serializer_ptr) result(bmi_status) bind(C, name="get_serializer_box")
    use, intrinsic:: iso_c_binding, only: c_ptr, c_loc, c_int
    use bmif_2_0
    use iso_c_serialization
@@ -970,15 +971,15 @@ contains
     this = c_loc(adapter)
     bmi_status = BMI_SUCCESS
    endif
- end function create_adapter
+ end function get_serializer_box 
 
  !
  !delete the adapter object
  !this should to be used only after the serializer object it points to has been
  !deleted.
  !
-  function delete_adapter(this) result(bmi_status) bind(C, &
-          name="c_delete_adapter")
+  function delete_serializer_box(this) result(bmi_status) bind(C, &
+          name="delete_serializer_box")
    use, intrinsic:: iso_c_binding, only: c_ptr, c_loc, c_int
    use bmif_2_0
    use iso_c_serialization
@@ -996,6 +997,53 @@ contains
     deallocate( f_this ) 
     bmi_status = BMI_SUCCESS
    endif
- end function delete_adapter
+ end function delete_serializer_box
+
+  function register_serializer(this) result(bmi_status) bind(C, &
+          name="register_serializer")
+   use, intrinsic:: iso_c_binding, only: c_ptr, c_loc, c_int
+   use bmif_2_0
+   use iso_c_serialization
+   implicit none
+   type(c_ptr), intent(out) :: this ! If not value, then from the C perspective `this` is a void**
+   type(c_ptr) :: serializer_ptr
+   integer(kind=c_int) :: bmi_status
+
+   bmi_status =  get_serializer_handle(serializer_ptr)
+
+   if ( bmi_status .eq. BMI_FAILURE ) then
+           return
+   end if
+
+   bmi_status = get_serializer_box(this, serializer_ptr)
+
+  end function register_serializer
+
+  function unregister_serializer(this) result(bmi_status) bind(C, &
+          name="unregister_serializer")
+   use, intrinsic:: iso_c_binding, only: c_ptr, c_loc, c_int
+   use bmif_2_0
+   use iso_c_serialization
+   implicit none
+   type(c_ptr), intent(inout) :: this ! If not value, then from the C perspective `this` is a void**
+   type(serializer_adapter), pointer :: f_this
+   integer(kind=c_int) :: bmi_status
+
+   call c_f_pointer( this, f_this)
+
+   if( .not. associated( f_this%ptr ) ) then
+      bmi_status = BMI_FAILURE
+   else
+      deallocate( f_this%ptr )
+      bmi_status = BMI_SUCCESS
+   endif
+
+   if ( bmi_status .eq. BMI_FAILURE ) then
+           return
+   end if
+
+   bmi_status = delete_serializer_box(this)
+
+ end function unregister_serializer
 
 end module state_serialization
