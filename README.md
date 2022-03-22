@@ -33,7 +33,7 @@ Method3_src -- The source code that uses C language to serialize/deserialize the
 
 Method3_test -- Testing data and program for Method 3.
 
-Method4_src -- The combined C serialize/deserialize code from both Method 3 and  the CFE serialization code, i.e., Method 4.
+Method4_src -- The combined C serialize/deserialize code from both Method 3 and  the CFE serialization code, i.e., Method 4. Test input data for the CFE model is also included in this directory.
 
 Method4_test -- Test data and program for Method 4.
 
