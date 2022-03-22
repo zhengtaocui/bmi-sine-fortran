@@ -14,6 +14,7 @@
 #include <dlfcn.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include "iso_c_bmif_2_0.h"
 #include "bmi_fortran.h"
@@ -51,6 +52,8 @@ int test_fortran_model()
 
     char name[2048];
 
+    clock_t t0 = clock();
+    clock_t t1;
     /*
      * The first model
      */
@@ -86,6 +89,9 @@ int test_fortran_model()
     status = model1->initialize(model2, config_file);
     check_status(&status, "model2 initialize");
 
+    t1 = clock();
+    printf( "Model initialization time = %f seconds\n",
+		     ( (double)( t1 - t0 ) ) / CLOCKS_PER_SEC );
     /*
      * component name of model 1
      */
@@ -139,7 +145,7 @@ int test_fortran_model()
     check_status(&status, "serialize model1");
 
     printf( "Now deserialize the first model to the second model ... \n" );
-    status = deserialize_to_state(ser_file, model2, 1 );
+    status = deserialize_to_state(ser_file, model2, 0 );
     check_status(&status, "deserialize");
 
     printf( "After deserializing, comparing two models ...\n" );
@@ -205,5 +211,10 @@ int test_fortran_model()
 
     free(model1);
     free(model2);
+
+    printf( "Model run time = %f seconds\n",
+		     ( (double)( clock() - t1 ) ) / CLOCKS_PER_SEC );
+    printf( "Total program run time = %f seconds\n",
+		     ( (double)( clock() - t0 ) ) / CLOCKS_PER_SEC );
     return(status);
 }

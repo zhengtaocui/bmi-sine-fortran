@@ -307,8 +307,8 @@ int serialize(Bmi* model1, const char *ser_file) {
 
     int n_state_vars, result;
     result = get_state_var_count( model1, &n_state_vars);
-    printf("In serialize()...\n");
-    printf("   n_state_vars = %d.\n", n_state_vars);
+    //printf("In serialize()...\n");
+    //printf("   n_state_vars = %d.\n", n_state_vars);
     
     if (result == BMI_FAILURE){
         puts("ERROR in get_state_var_count(); returning.");
@@ -320,7 +320,7 @@ int serialize(Bmi* model1, const char *ser_file) {
     int i, j, n_bytes;
     void *ptr_list[ n_state_vars ];
     unsigned int length, lengths[ n_state_vars ];
-    int verbose = 1;
+    int verbose = 0;
     int    i_val;
     long   li_val;
     float  f_val;
@@ -420,7 +420,7 @@ int serialize(Bmi* model1, const char *ser_file) {
         strncpy( type, types[i], BMI_MAX_TYPE_NAME);
         // type = types[i];  //#### Doesn't work now.
         // printf("  types[i] = %s\n", types[i]);
-        printf("  i = %d, name = %s, type = %s, length = %u\n", i, names[i], type, length );
+        //printf("  i = %d, name = %s, type = %s, length = %u\n", i, names[i], type, length );
 
         if (ptr_list[i] == NULL){
             if (verbose){
@@ -532,22 +532,22 @@ int serialize(Bmi* model1, const char *ser_file) {
             } else if (strcmp(type, "string") == 0 ||
 			                  strcmp(type, "character") == 0 ){
                 // Note:  Need ptr_list[i] without * here.
-	        printf( " serialize: %s = %s\n", names[i], ptr_list[i] ); 
+	        //printf( " serialize: %s = %s\n", names[i], ptr_list[i] ); 
                 msgpack_pack_str_body(&pk, ptr_list[i], length);
             } else if (strcmp(type, "logical") == 0 ) {
                 for (j=0; j<length; j++){
                     i_val = *( ((int *)ptr_list[i]) + j);
-		    printf( " serialize: %s = %d\n", names[i], i_val ); 
+		    //printf( " serialize: %s = %d\n", names[i], i_val ); 
                     i_val ? msgpack_pack_true(&pk) : msgpack_pack_false(&pk);
 	       	}
             } else if ( strcmp(type, "bool") == 0 ){
                 for (j=0; j<length; j++){
                     b_val = *( ((bool *)ptr_list[i]) + j);
-		    printf( " serialize: %s = %d\n", names[i], b_val ); 
+		    //printf( " serialize: %s = %d\n", names[i], b_val ); 
                     b_val ? msgpack_pack_true(&pk) : msgpack_pack_false(&pk);
 	       	}
             } else if (strcmp(type, "char") == 0){
-	        printf( " serialize: %s = %s\n", names[i], ptr_list[i] ); 
+	        //printf( " serialize: %s = %s\n", names[i], ptr_list[i] ); 
                 // Note:  Need ptr_list[i] without * here.
                 msgpack_pack_str_body(&pk, ptr_list[i], length);     
             } else if (strcmp(type, "FILE") == 0){
@@ -794,7 +794,7 @@ int deserialize_to_state(const char *ser_file, Bmi* model2, int print_obj) {
 		}
 		//not sure if this is needed.
 		//sval[ length - 1] = '\0';
-		printf("deserialize: %s = %s\n", name, sval );
+		//printf("deserialize: %s = %s\n", name, sval );
                 model2->set_value(model2, name, sval );
                 free(sval);
             //--------------------------------------------------
@@ -805,7 +805,7 @@ int deserialize_to_state(const char *ser_file, Bmi* model2, int print_obj) {
                 for (int j=0; j<length; j++){
                   sval[j] = (char)obj.via.str.ptr[j];
 		}
-		printf("deserialize: %s = %s\n", name, sval );
+		//printf("deserialize: %s = %s\n", name, sval );
                 model2->set_value(model2, name, sval );
                 free(sval);
             } else if ( strcmp(type, "integer1") == 0){
@@ -814,7 +814,7 @@ int deserialize_to_state(const char *ser_file, Bmi* model2, int print_obj) {
                 for (int j=0; j<length; j++){
                   sval[j] = (char)obj.via.array.ptr[j].via.i64;
 		}
-		printf("deserialize: %s = %s\n", name, sval );
+		//printf("deserialize: %s = %s\n", name, sval );
                 model2->set_value(model2, name, sval );
                 free(sval);
             //--------------------------------------------------            
@@ -856,7 +856,7 @@ int deserialize_to_state(const char *ser_file, Bmi* model2, int print_obj) {
                 b_arr = (bool*) malloc(length * sizeof( bool ));
                 for (int j=0; j<length; j++){
                     b_arr[j] = (bool)obj.via.array.ptr[j].via.boolean;
-		    printf("deserialize: %s(%d) = %d\n", name, j, b_arr[j] );
+		    //printf("deserialize: %s(%d) = %d\n", name, j, b_arr[j] );
 	       	}
                 model2->set_value(model2, name, b_arr );
                 free(b_arr);
@@ -926,7 +926,7 @@ int deserialize_to_state(const char *ser_file, Bmi* model2, int print_obj) {
 //------------------------------------------------------------------------
 int compare_states(Bmi* model1, Bmi* model2){
 
-    int    verbose = 1;
+    int    verbose = 0;
     int    i, j, match, n_state_vars, result;
     int    err_count = 0;
     int    i_val1, i_val2;
@@ -1039,9 +1039,9 @@ int compare_states(Bmi* model1, Bmi* model2){
                 i_val1 = *( ((int *)ptr_list1[i]) + j);
                 i_val2 = *( ((int *)ptr_list2[i]) + j);
                 if (i_val1 != i_val2){
-                    printf("Mismatch: i = %d, j = %d\n", i, j);
-                    printf("i_val1 = %d, i_val2 = %d\n", i_val1, i_val2);
-                    printf("var_name = %s\n\n", name);
+                    //printf("Mismatch: i = %d, j = %d\n", i, j);
+                    //printf("i_val1 = %d, i_val2 = %d\n", i_val1, i_val2);
+                    //printf("var_name = %s\n\n", name);
                     match = 0;}
             }
         } else if (strcmp(type, "short") == 0 || strcmp(type, "integer2") == 0){
@@ -1049,9 +1049,9 @@ int compare_states(Bmi* model1, Bmi* model2){
                 si_val1 = *( ((short *)ptr_list1[i]) + j);
                 si_val2 = *( ((short *)ptr_list2[i]) + j);
                 if (si_val1 != si_val2){
-                    printf("Mismatch: i = %d, j = %d\n", i, j);
-                    printf("si_val1 = %hd, si_val2 = %hd\n", si_val1, si_val2);
-                    printf("var_name = %s\n\n", name);
+                    //printf("Mismatch: i = %d, j = %d\n", i, j);
+                    //printf("si_val1 = %hd, si_val2 = %hd\n", si_val1, si_val2);
+                    //printf("var_name = %s\n\n", name);
                     match = 0; }
             }
         } else if (strcmp(type, "long") == 0 || strcmp(type, "integer8") == 0 ){      //################
@@ -1059,9 +1059,9 @@ int compare_states(Bmi* model1, Bmi* model2){
                 li_val1 = *( ((long *)ptr_list1[i]) + j);
                 li_val2 = *( ((long *)ptr_list2[i]) + j);
                 if (li_val1 != li_val2){
-                    printf("Mismatch: i = %d, j = %d\n", i, j);
-                    printf("li_val1 = %ld, li_val2 = %ld\n", li_val1, li_val2);
-                    printf("var_name = %s\n\n", name);
+                    //printf("Mismatch: i = %d, j = %d\n", i, j);
+                    //printf("li_val1 = %ld, li_val2 = %ld\n", li_val1, li_val2);
+                    //printf("var_name = %s\n\n", name);
                     match = 0; }
             }
         } else if (strcmp(type, "float") == 0 || strcmp(type, "real4") == 0 ){
@@ -1069,9 +1069,9 @@ int compare_states(Bmi* model1, Bmi* model2){
                 f_val1 = *( ((float *)ptr_list1[i]) + j);
                 f_val2 = *( ((float *)ptr_list2[i]) + j);
                 if (f_val1 != f_val2){
-                    printf("Mismatch: i = %d, j = %d\n", i, j);
-                    printf("f_val1 = %f, f_val2 = %f\n", f_val1, f_val2);
-                    printf("var_name = %s\n\n", name);
+                    //printf("Mismatch: i = %d, j = %d\n", i, j);
+                    //printf("f_val1 = %f, f_val2 = %f\n", f_val1, f_val2);
+                    //printf("var_name = %s\n\n", name);
                     match = 0; }
             }
         } else if (strcmp(type, "double") == 0 || strcmp(type, "real8") == 0 ){
@@ -1079,25 +1079,25 @@ int compare_states(Bmi* model1, Bmi* model2){
                 d_val1 = *( ((double *)ptr_list1[i]) + j);
                 d_val2 = *( ((double *)ptr_list2[i]) + j);
                 if (d_val1 != d_val2){
-                    printf("Mismatch: i = %d, j = %d\n", i, j);
-                    printf("d_val1 = %f, d_val2 = %f\n", d_val1, d_val2);
-                    printf("var_name = %s\n\n", name);
+                    //printf("Mismatch: i = %d, j = %d\n", i, j);
+                    //printf("d_val1 = %f, d_val2 = %f\n", d_val1, d_val2);
+                    //printf("var_name = %s\n\n", name);
                     match = 0; }
             }
         } else if (strcmp(type, "string") == 0 || strcmp(type, "character") == 0 ){
               if (strcmp(ptr_list1[i], ptr_list2[i]) != 0){
-                    printf("Mismatch: i = %d\n", i);
-                    printf("str1 = %s\n", ptr_list1[i]);
-                    printf("str2 = %s\n", ptr_list2[i]);                          
-                    printf("var_name = %s\n\n", name);
+                    //printf("Mismatch: i = %d\n", i);
+                    //printf("str1 = %s\n", ptr_list1[i]);
+                    //printf("str2 = %s\n", ptr_list2[i]);                          
+                    //printf("var_name = %s\n\n", name);
                     match = 0;
               }
         } else if (strcmp(type, "char") == 0 || strcmp(type, "integer1") == 0){
               if (strcmp(ptr_list1[i], ptr_list2[i]) != 0){
-                    printf("Mismatch: i = %d\n", i);
-                    printf("str1 = %s\n", ptr_list1[i]);
-                    printf("str2 = %s\n", ptr_list2[i]);                          
-                    printf("var_name = %s\n\n", name);
+                    //printf("Mismatch: i = %d\n", i);
+                    //printf("str1 = %s\n", ptr_list1[i]);
+                    //printf("str2 = %s\n", ptr_list2[i]);                          
+                    //printf("var_name = %s\n\n", name);
                     match = 0;
               }
         } else if (strcmp(type, "bool") == 0 ){
@@ -1105,9 +1105,9 @@ int compare_states(Bmi* model1, Bmi* model2){
                 b_val1 = *( ((bool *)ptr_list1[i]) + j);
                 b_val2 = *( ((bool *)ptr_list2[i]) + j);
                 if (b_val1 != i_val2){
-                    printf("Mismatch: i = %d, j = %d\n", i, j);
-                    printf("b_val1 = %d, b_val2 = %d\n", b_val1, b_val2);
-                    printf("var_name = %s\n\n", name);
+                    //printf("Mismatch: i = %d, j = %d\n", i, j);
+                    //printf("b_val1 = %d, b_val2 = %d\n", b_val1, b_val2);
+                    //printf("var_name = %s\n\n", name);
                     match = 0;}
             }
 	} else if ( strcmp(type, "logical") == 0 ){
@@ -1116,9 +1116,9 @@ int compare_states(Bmi* model1, Bmi* model2){
                 i_val1 = *( ((int *)ptr_list1[i]) + j);
                 i_val2 = *( ((int *)ptr_list2[i]) + j);
                 if (i_val1 != i_val2){
-                    printf("Mismatch: i = %d, j = %d\n", i, j);
-                    printf("b_val1 = %d, b_val2 = %d\n", i_val1, i_val2);
-                    printf("var_name = %s\n\n", name);
+                    //printf("Mismatch: i = %d, j = %d\n", i, j);
+                    //printf("b_val1 = %d, b_val2 = %d\n", i_val1, i_val2);
+                    //printf("var_name = %s\n\n", name);
                     match = 0;}
             }
         } else if (strcmp(type, "FILE") == 0){
@@ -1133,7 +1133,9 @@ int compare_states(Bmi* model1, Bmi* model2){
         if (match == 0){
             err_count++;
         } else{
+          if (verbose){
             printf("Match: i = %d, name = %s\n", i, name) ;        
+	  } 
         }
     }
 

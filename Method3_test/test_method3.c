@@ -13,6 +13,7 @@
 #include <dlfcn.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include "iso_c_bmif_2_0.h"
 #include "serializer.h"
@@ -50,6 +51,9 @@ int main(int argc, char** argv)
 
     char name[2048];
 
+    clock_t t0 = clock();
+    clock_t t1;
+
     /*
      * The first model
      */
@@ -76,6 +80,9 @@ int main(int argc, char** argv)
     status = initialize(box_handle2, config_file);
     check_status(&status, "model2 initialize");
 
+    t1 = clock();
+    printf( "Model initialization time = %f seconds\n",
+		     ( (double)( t1 - t0 ) ) / CLOCKS_PER_SEC );
     /*
      * component name of model 1
      */
@@ -183,7 +190,6 @@ int main(int argc, char** argv)
     }
     printf( "Done comparing after both running to end.\n" );
 
-
     /*
      * cleaning up
      */
@@ -193,5 +199,9 @@ int main(int argc, char** argv)
     status = unregister_bmi(&box_handle2);
     check_status(&status, "delete_box model 2 box");
 
+    printf( "Model run time = %f seconds\n",
+		     ( (double)( clock() - t1 ) ) / CLOCKS_PER_SEC );
+    printf( "Total program run time = %f seconds\n",
+		     ( (double)( clock() - t0 ) ) / CLOCKS_PER_SEC );
     return(0);
 }
