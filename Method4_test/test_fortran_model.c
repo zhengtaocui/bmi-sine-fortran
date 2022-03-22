@@ -35,12 +35,6 @@ int test_fortran_model()
     /*
      * handles for the first model
      */
-    void* bmi_handle = NULL;
-    void* bmi_handle2 = NULL;
-
-    /*
-     * handles for the first model
-     */
     void* box_handle = NULL;
     void* box_handle2 = NULL;
 
@@ -60,10 +54,7 @@ int test_fortran_model()
     /*
      * The first model
      */
-    status = get_bmi_handle(&bmi_handle);
-    check_status(&status, "get model1 handle");
-
-    status = get_box_handle(&box_handle, &bmi_handle);
+    status = register_bmi(&box_handle);
     check_status(&status, "get model1 box handle");
 
     printf( "config file: %s\n", config_file);
@@ -82,10 +73,7 @@ int test_fortran_model()
     /*
      * The second model
      */
-    status = get_bmi_handle(&bmi_handle2);
-    check_status(&status, "model2 factory");
-
-    status = get_box_handle(&box_handle2, &bmi_handle2);
+    status = register_bmi(&box_handle2);
     check_status(&status, "model2 create_box");
 
     /*
@@ -209,17 +197,11 @@ int test_fortran_model()
     /*
      * cleaning up
      */
-    status = destroy_bmi_handle(&bmi_handle);
-    check_status(&status, "destroy model 1");
-
-    status = destroy_box_handle(&box_handle);
+    status = unregister_bmi(&box_handle);
     check_status(&status, "delete_box model 1 box");
 
-    status = destroy_bmi_handle(&bmi_handle2);
-    check_status(&status, "destroy model 2");
-
-    status = destroy_box_handle(&box_handle2);
-    check_status(&status, "delete_box model 1 box");
+    status = unregister_bmi(&box_handle2);
+    check_status(&status, "delete_box model 2 box");
 
     free(model1);
     free(model2);

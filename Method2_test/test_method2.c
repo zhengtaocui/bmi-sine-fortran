@@ -33,13 +33,7 @@ void check_status(int* status, char* name){
 int main(int argc, char** argv)
 {
     /*
-     * handles for the first model
-     */
-    void* bmi_handle = NULL;
-    void* bmi_handle2 = NULL;
-
-    /*
-     * handles for the first model
+     * handles for the first and second model
      */
     void* box_handle = NULL;
     void* box_handle2 = NULL;
@@ -64,7 +58,7 @@ int main(int argc, char** argv)
      *  create a serializer object
      */
     status = get_serializer_handle(&serializer_handle);
-    check_status(&status, "serializer factory");
+    check_status(&status, "serializer handle");
 
     status = get_serializer_box(&serializer_adapter_handle, &serializer_handle);
     check_status(&status, "create adapter");
@@ -72,10 +66,7 @@ int main(int argc, char** argv)
     /*
      * The first model
      */
-    status = get_bmi_handle(&bmi_handle);
-    check_status(&status, "model1 factory");
-
-    status = get_box_handle(&box_handle, &bmi_handle);
+    status = register_bmi(&box_handle);
     check_status(&status, "model1 create_box");
 
     printf( "config file: %s\n", config_file);
@@ -89,10 +80,7 @@ int main(int argc, char** argv)
     /*
      * The second model
      */
-    status = get_bmi_handle(&bmi_handle2);
-    check_status(&status, "model2 factory");
-
-    status = get_box_handle(&box_handle2, &bmi_handle2);
+    status = register_bmi(&box_handle2);
     check_status(&status, "model2 create_box");
 
     /*
@@ -225,18 +213,11 @@ int main(int argc, char** argv)
 //    status = finalize(&box_handle);
 //    check_status(&status, "finalize");
 
-    status = destroy_bmi_handle(&bmi_handle);
-    check_status(&status, "destroy model 1");
-
-    status = destroy_box_handle(&box_handle);
+    status = unregister_bmi(&box_handle);
     check_status(&status, "destroy_box model 1 box");
 
-    status = destroy_bmi_handle(&bmi_handle2);
-    check_status(&status, "destroy model 2");
-
-    status = destroy_box_handle(&box_handle2);
-    check_status(&status, "delete_box model 1 box");
-
+    status = unregister_bmi(&box_handle2);
+    check_status(&status, "delete_box model 2 box");
 
     return(0);
 }
