@@ -65,17 +65,27 @@ Note: The CMAKE_INSTALL_PREFIX variable should point to the same install directo
 How to run tests:
 
 Run Method 1 test:
+
   cd _build/Method1_test
+  
   ./test_method1 ./sample.cfg
 
 Run Method 2 test:
+
   cd _build/Method2_test
+  
   ./test_method2 ./sample.cfg
 
 Run Method 3 test:
+
   cd _build/Method3_test
+  
   ./test_method3 ./sample.cfg
 
 Run Method 4 test:
+
   cd _build/Method4_test
+  
   ./test_method4
+
+(Note: No sample.cfg is needed for test_method4.)
