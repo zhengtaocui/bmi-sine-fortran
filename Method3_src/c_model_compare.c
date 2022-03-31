@@ -30,6 +30,8 @@ int c_model_compare(void* box_handle1, void* box_handle2 )
     char* temp2 = (char*)NULL;
     int* inttemp = (int*)NULL;
     int* inttemp2 = (int*)NULL;
+    int8_t* int1temp = (int8_t*)NULL;
+    int8_t* int1temp2 = (int8_t*)NULL;
     short* shorttemp = (short*)NULL;
     short* shorttemp2 = (short*)NULL;
     long* longtemp = (long*)NULL;
@@ -115,24 +117,24 @@ int c_model_compare(void* box_handle1, void* box_handle2 )
       }
       else if ( strcmp(type, "integer1" ) == 0 )
       {
-          temp  = (char*)malloc( var_length * sizeof(char) );
-          temp2  = (char*)malloc( var_length * sizeof(char) );
-	  status = get_value_int1(box_handle1, cnames[i], temp );
-	  status = get_value_int1(box_handle2, cnames[i], temp2 );
+          int1temp  = (int8_t*)malloc( var_length * sizeof(int8_t) );
+          int1temp2  = (int8_t*)malloc( var_length * sizeof(int8_t) );
+	  status = get_value_int1(box_handle1, cnames[i], int1temp );
+	  status = get_value_int1(box_handle2, cnames[i], int1temp2 );
 	  for ( int j = 0; j < var_length; ++j )
 	  {
-              if ( temp[ j ] != temp2[ j ] )
+              if ( int1temp[ j ] != int1temp2[ j ] )
 	      {
                   printf( "variable: %s[%d] is not equal! ", cnames[i], j );
-                  printf( "  model 1 = %d, model 2 = %d \n", temp[j],
-				  temp2[j] );
-	          free(temp);
-	          free(temp2);
+                  printf( "  model 1 = %d, model 2 = %d \n", int1temp[j],
+				  int1temp2[j] );
+	          free(int1temp);
+	          free(int1temp2);
                   return(1);
 	      }
 	  }
-	  free(temp);
-	  free(temp2);
+	  free(int1temp);
+	  free(int1temp2);
       }
       else if ( strcmp(type, "integer2" ) == 0 )
       {

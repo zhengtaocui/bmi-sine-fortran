@@ -146,8 +146,8 @@ int c_deserialize( char** names, int* cl, char** types, int* typelength,
 	  {
              ret = msgpack_unpack_next(&unpacked, inbuffer, len, &off);
              //cast `cptr2` to signed char** and populate the values
-	     ((signed char**)cptr2)[i][j] = 
-		                          (signed char)(unpacked.data.via.i64);
+	     ((int8_t**)cptr2)[i][j] = 
+		                          (int8_t)(unpacked.data.via.i64);
 //             printf( "inside c_deserialize %d \n", 
 //		   *(signed char*)(signed char**)(cptr2[i] + j * sizeof(int)));
 	  }

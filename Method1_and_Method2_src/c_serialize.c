@@ -123,9 +123,9 @@ int c_serialize( char** names, int* cl, char** types, int* typelength,
       {
           for ( int j = 0; j < var_size[i]; ++j )
 	  {
-             msgpack_pack_signed_char(&pk, ((signed char**)cptr2)[i][j] );
+             msgpack_pack_signed_char(&pk, ((int8_t**)cptr2)[i][j] );
 //             printf( "inside c_serialize: %s int1 = %d \n", cnames[i],
-//	           *(signed char*)(signed char**)(cptr2[i] + j * sizeof(signed char)) );
+//	           *(int8_t*)(int8_t**)(cptr2[i] + j * sizeof(int8_t)) );
 	  }
       }
       else if ( strcmp(ctypes[i], "integer2") ==  0 )

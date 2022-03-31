@@ -41,6 +41,7 @@ int c_serialize_states(void* box_handle, const char* ser_file )
     char* temp = (char*)NULL;
     char** charchartemp = (char**)NULL;
     int* inttemp = (int*)NULL;
+    int8_t* int1temp = (int8_t*)NULL;
     int** intinttemp = (int**)NULL;
     short* shorttemp = (short*)NULL;
     long* longtemp = (long*)NULL;
@@ -156,14 +157,14 @@ int c_serialize_states(void* box_handle, const char* ser_file )
 	   * pre-allocate space becasue we will use get_value_* functions
 	   * the values will be copied into this space.
 	   */
-          temp  = (char*)malloc( var_length * sizeof(char) );
-	  status = get_value_int1(box_handle, cnames[i], (char*)temp );
+          int1temp  = (int8_t*)malloc( var_length * sizeof(int8_t) );
+	  status = get_value_int1(box_handle, cnames[i], (int8_t*)int1temp );
 	  for ( int j = 0; j < var_length; ++j )
 	  {
-//              printf("       %s[%d] = %d \n", cnames[i], j, temp[j] );
-              msgpack_pack_char(&pk, temp[j]);
+//              printf("       %s[%d] = %d \n", cnames[i], j, int1temp[j] );
+              msgpack_pack_char(&pk, int1temp[j]);
 	  }
-	  free(temp);
+	  free(int1temp);
       }
       else if ( strcmp(type, "integer2" ) == 0 )
       {

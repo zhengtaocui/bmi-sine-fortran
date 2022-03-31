@@ -37,6 +37,7 @@ int c_deserialize_states(void* box_handle, const char* ser_file )
      */
     char* temp = (char*)NULL;
     int* inttemp = (int*)NULL;
+    int8_t* int1temp = (int8_t*)NULL;
     short* shorttemp = (short*)NULL;
     long* longtemp = (long*)NULL;
     float* floattemp = (float*)NULL;
@@ -132,18 +133,18 @@ int c_deserialize_states(void* box_handle, const char* ser_file )
       else if ( strcmp(type, "integer1" ) == 0 )
       {
           //store values in a 1D array
-          temp  = (char*)malloc( var_length * sizeof(char) );
+          int1temp  = (int8_t*)malloc( var_length * sizeof(int8_t) );
 	  for ( int j = 0; j < var_length; ++j )
 	  {
               //deserialize the array element from the file
               ret = msgpack_unpack_next(&unpacked, inbuffer, len, &off);
-	      temp[j] = (signed char)(unpacked.data.via.i64);
-//              printf("       %s[%d] = %d \n", cnames[i], j, temp[j] );
+	      int1temp[j] = (int8_t)(unpacked.data.via.i64);
+//              printf("       %s[%d] = %d \n", cnames[i], j, int1temp[j] );
 	  }
 	  //populate the restored states to the model object 
-	  set_value_int1(box_handle, cnames[i], temp);
+	  set_value_int1(box_handle, cnames[i], int1temp);
 	  //cleaning up
-	  free(temp);
+	  free(int1temp);
       }
       else if ( strcmp(type, "integer2" ) == 0 )
       {

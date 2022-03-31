@@ -322,6 +322,7 @@ int serialize(Bmi* model1, const char *ser_file) {
     unsigned int length, lengths[ n_state_vars ];
     int verbose = 0;
     int    i_val;
+    int8_t    i1_val;
     long   li_val;
     float  f_val;
     double d_val;
@@ -443,8 +444,9 @@ int serialize(Bmi* model1, const char *ser_file) {
             if (strcmp(type, "int") == 0 || 
 			                  strcmp(type, "integer4") == 0 ){
                 msgpack_pack_int(&pk, *(int *)ptr_list[i]);
-            } else if (strcmp(type, "integer1") == 0){
-                msgpack_pack_char(&pk, *(char *)ptr_list[i]);
+            } else if ( strcmp(type, "int8_t" ) == 0 ||
+			                  strcmp(type, "integer1") == 0 ){
+                msgpack_pack_char(&pk, *(int8_t *)ptr_list[i]);
             } else if (strcmp(type, "short") == 0 || 
 			                   strcmp(type, "integer2") == 0){
                 msgpack_pack_short(&pk, *(short *)ptr_list[i]);
@@ -515,10 +517,11 @@ int serialize(Bmi* model1, const char *ser_file) {
                 for (j=0; j<length; j++){
                     s_val = *( ((short *)ptr_list[i]) + j);
                     msgpack_pack_short(&pk, s_val); }  //#####################
-            } else if ( strcmp(type, "integer1") == 0 ){
+            } else if (strcmp(type, "int8_t" ) == 0 ||
+			                  strcmp(type, "integer1") == 0 ){
                 for (j=0; j<length; j++){
-                    c_val = *( ((char *)ptr_list[i]) + j);
-                    msgpack_pack_char(&pk, c_val); }  //#####################
+                    i1_val = *( ((int8_t *)ptr_list[i]) + j);
+                    msgpack_pack_char(&pk, i1_val); }  //#####################
             } else if (strcmp(type, "float") == 0 ||
 			                  strcmp(type, "real4") == 0 ){
                 for (j=0; j<length; j++){
@@ -614,6 +617,7 @@ int deserialize_to_state(const char *ser_file, Bmi* model2, int print_obj) {
     int verbose   = 1;
     // int print_obj = 1;
     int     i_val,  *i_arr, j, result;
+    int8_t  i1_val, *i1_arr;
     short   si_val, *si_arr;
     long    li_val, *li_arr;
     float   f_val,  *f_arr;
@@ -744,6 +748,9 @@ int deserialize_to_state(const char *ser_file, Bmi* model2, int print_obj) {
             if (strcmp(type, "int") == 0 || strcmp(type, "integer4") == 0 ){
                 i_val = (int)obj.via.i64;
                 model2->set_value(model2, name, &i_val );
+            } else if (strcmp(type, "int8_t") == 0 || strcmp(type, "integer1") == 0 ){  
+                i1_val = (int8_t)obj.via.i64;
+                model2->set_value(model2, name, &i1_val );
             } else if (strcmp(type, "short") == 0 || strcmp(type, "integer2") == 0 ){  
                 si_val = (short)obj.via.i64;
                 model2->set_value(model2, name, &si_val );
@@ -756,7 +763,7 @@ int deserialize_to_state(const char *ser_file, Bmi* model2, int print_obj) {
             } else if (strcmp(type, "double") == 0 || strcmp(type, "integer8") == 0 ){   
                 d_val = (double)obj.via.f64;
                 model2->set_value(model2, name, &d_val );
-            } else if (strcmp(type, "char") == 0 || strcmp(type, "integer1") == 0 ){
+            } else if (strcmp(type, "char") == 0 ){
                 model2->set_value(model2, name, &obj.via.i64 );
             } else if (strcmp(type, "string") == 0 || strcmp(type, "character") == 0 ){
                 model2->set_value(model2, name, &obj.via.i64 );
@@ -808,15 +815,15 @@ int deserialize_to_state(const char *ser_file, Bmi* model2, int print_obj) {
 		//printf("deserialize: %s = %s\n", name, sval );
                 model2->set_value(model2, name, sval );
                 free(sval);
-            } else if ( strcmp(type, "integer1") == 0){
+            } else if ( strcmp(type, "int8_t" ) == 0 ||
+			                          strcmp(type, "integer1") == 0){
 
-                sval  = (char*)malloc( length * sizeof(char) );
+                i1_arr  = (int8_t*)malloc( length * sizeof(int8_t) );
                 for (int j=0; j<length; j++){
-                  sval[j] = (char)obj.via.array.ptr[j].via.i64;
+                  i1_arr[j] = obj.via.array.ptr[j].via.i64;
 		}
-		//printf("deserialize: %s = %s\n", name, sval );
-                model2->set_value(model2, name, sval );
-                free(sval);
+                model2->set_value(model2, name, i1_arr );
+                free(i1_arr);
             //--------------------------------------------------            
             } else if (strcmp(type, "int") == 0 || strcmp(type, "integer4") == 0){
                 i_arr = (int*) malloc(length * sizeof( int ));
@@ -930,6 +937,7 @@ int compare_states(Bmi* model1, Bmi* model2){
     int    i, j, match, n_state_vars, result;
     int    err_count = 0;
     int    i_val1, i_val2;
+    int8_t    i1_val1, i1_val2;
     short  si_val1, si_val2;
     long   li_val1, li_val2;
     float  f_val1, f_val2;
@@ -1044,6 +1052,16 @@ int compare_states(Bmi* model1, Bmi* model2){
                     //printf("var_name = %s\n\n", name);
                     match = 0;}
             }
+        } else if (strcmp(type, "int8_t") == 0 || strcmp(type, "integer1") == 0){
+            for (j=0; j<length; j++){
+                i1_val1 = *( ((int8_t *)ptr_list1[i]) + j);
+                i1_val2 = *( ((int8_t *)ptr_list2[i]) + j);
+                if (i1_val1 != i1_val2){
+                    //printf("Mismatch: i = %d, j = %d\n", i, j);
+                    //printf("si_val1 = %hd, si_val2 = %hd\n", si_val1, si_val2);
+                    //printf("var_name = %s\n\n", name);
+                    match = 0; }
+            }
         } else if (strcmp(type, "short") == 0 || strcmp(type, "integer2") == 0){
             for (j=0; j<length; j++){
                 si_val1 = *( ((short *)ptr_list1[i]) + j);
@@ -1092,7 +1110,7 @@ int compare_states(Bmi* model1, Bmi* model2){
                     //printf("var_name = %s\n\n", name);
                     match = 0;
               }
-        } else if (strcmp(type, "char") == 0 || strcmp(type, "integer1") == 0){
+        } else if (strcmp(type, "char") == 0 ){
               if (strcmp(ptr_list1[i], ptr_list2[i]) != 0){
                     //printf("Mismatch: i = %d\n", i);
                     //printf("str1 = %s\n", ptr_list1[i]);

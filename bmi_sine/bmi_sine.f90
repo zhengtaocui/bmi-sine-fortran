@@ -9,6 +9,9 @@
 ! Description: Implemented the dummy 'sine' Fortran model using the
 !              Fortran BMI interfaces.
 ! 		 
+! Last date of modification: Mar 31, 2022
+!     Implmented the grid functions and added the *_at_indices_* functions 
+!      
 module bmisinef
 
   use sinef
@@ -27,6 +30,14 @@ module bmisinef
      character(len=BMI_MAX_UNITS_NAME) :: units
      character(len=BMI_MAX_LOCATION_NAME) :: location ! e.g. "node", "face"
      integer :: grid ! e.g. 0
+     character(len=BMI_MAX_TYPE_NAME) :: gridtype !scalar
+                                                  !points
+                                                  !vector
+                                                  !unstructured
+                                                  !structured_quadrilateral
+                                                  !rectilinear
+                                                  !uniform_rectilinear
+     integer :: gridrank ! e.g. 0
   end type variable
 
   type, extends (bmi) :: bmi_sine
@@ -104,12 +115,23 @@ module bmisinef
           get_value_ptr_string, &
           get_value_ptr_logical
      procedure :: get_value_at_indices_int => sine_get_at_indices_int
+     procedure :: get_value_at_indices_int1 => sine_get_at_indices_int1
+     procedure :: get_value_at_indices_int2 => sine_get_at_indices_int2
+     procedure :: get_value_at_indices_int8 => sine_get_at_indices_int8
+     procedure :: get_value_at_indices_logical => sine_get_at_indices_logical
+     procedure :: get_value_at_indices_string => sine_get_at_indices_string
      procedure :: get_value_at_indices_float => sine_get_at_indices_float
      procedure :: get_value_at_indices_double => sine_get_at_indices_double
      generic :: get_value_at_indices => &
           get_value_at_indices_int, &
+          get_value_at_indices_int1, &
+          get_value_at_indices_int2, &
+          get_value_at_indices_int8, &
+          get_value_at_indices_logical, &
+          get_value_at_indices_string, &
           get_value_at_indices_float, &
           get_value_at_indices_double
+
      procedure :: set_value_int => sine_set_int
      procedure :: set_value_int1 => sine_set_int1
      procedure :: set_value_int2 => sine_set_int2
@@ -128,10 +150,20 @@ module bmisinef
           set_value_string, &
           set_value_logical
      procedure :: set_value_at_indices_int => sine_set_at_indices_int
+     procedure :: set_value_at_indices_int1 => sine_set_at_indices_int1
+     procedure :: set_value_at_indices_int2 => sine_set_at_indices_int2
+     procedure :: set_value_at_indices_int8 => sine_set_at_indices_int8
+     procedure :: set_value_at_indices_logical => sine_set_at_indices_logical
+     procedure :: set_value_at_indices_string => sine_set_at_indices_string
      procedure :: set_value_at_indices_float => sine_set_at_indices_float
      procedure :: set_value_at_indices_double => sine_set_at_indices_double
      generic :: set_value_at_indices => &
           set_value_at_indices_int, &
+          set_value_at_indices_int1, &
+          set_value_at_indices_int2, &
+          set_value_at_indices_int8, &
+          set_value_at_indices_logical, &
+          set_value_at_indices_string, &
           set_value_at_indices_float, &
           set_value_at_indices_double
      !
@@ -167,51 +199,51 @@ module bmisinef
   type(variable), dimension(STATE_VAR_NAME_COUNT) :: &
           var_info = (/variable(1, 't', 'real', 1, &
                                 'not_set', 'DIMENSIONLESS', &
-                                'node', 0 ),               &
+                                'node', 0, 'scalar', 0 ),               &
                       variable(2, 'alpha', 'real', 1, &
                                 'not_set', 'm^2/s', &
-                                'node', 0 ),                &
+                                'node', 1, 'scalar', 0 ),                &
                       variable(3, 'dt', 'real', 1, &
                                 'not_set', 'DIMENSIONLESS', &
-                                'node', 0 ),               &
+                                'node', 2, 'scalar', 0 ),               &
                       variable(4, 't_end', 'real', 1, &
                                 'not_set', 'DIMENSIONLESS', &
-                                'node', 0 ),               &
+                                'node', 3, 'scalar', 0 ),               &
                       variable(5, 'n_x', 'integer', 1, &
                                 'not_set', 'DIMENSIONLESS', &
-                                'node', 0 ),               &
+                                'node', 4, 'scalar', 0 ),               &
                       variable(6, 'n_y', 'integer', 1, &
                                 'not_set', 'DIMENSIONLESS', &
-                                'node', 0 ),               &
+                                'node', 5, 'scalar', 0 ),               &
                       variable(7, 'id', 'integer', 1, &
                                 'not_set', 'DIMENSIONLESS', &
-                                'node', 0 ),               &
+                                'node', 6, 'scalar', 0 ),               &
                       variable(8, 'sinevalue', 'real', 1, &
                                 'not_set', 'DIMENSIONLESS', &
-                                'node', 0 ),               &
+                                'node', 7, 'scalar', 0 ),               &
                       variable(9, 'sinevalue_tmp', 'real*8', 1, &
                                 'not_set', 'DIMENSIONLESS', &
-                                'node', 1 ),               &
+                                'node', 8, 'vector', 1 ),               &
                       variable(10, 'sine2d', 'real', 1, &
                                 'not_set', 'DIMENSIONLESS', &
-                                'node', 2 ),               &
+                                'node', 9, 'uniform_rectilinear', 2 ),               &
                       variable(11, 'sine2d_ptr', 'real*8', 1, &
                                 'not_set', 'DIMENSIONLESS', &
-                                'node', 2 ),               &
+                                'node', 10, 'uniform_rectilinear', 2 ),               &
                       variable(12, 'description', 'character', &
                                   MAX_STRING_LENGTH, &
                                 'not_set', 'DIMENSIONLESS', &
-                                'node', 1 ),               &
+                                'node', 11, 'scalar', 0 ),               &
                       variable(13, 'logvar', 'logical', &
                                   1, &
                                 'not_set', 'DIMENSIONLESS', &
-                                'node', 1 ),               &
+                                'node', 12, 'vector', 1 ),               &
                       variable(14, 'int2d', 'integer', 1, &
                                 'not_set', 'DIMENSIONLESS', &
-                                'node', 2 ),               &
+                                'node', 13, 'uniform_rectilinear', 2 ),               &
                       variable(15, 'double2d', 'real*8', 1, &
                                 'not_set', 'DIMENSIONLESS', &
-                                'node', 2 ) /)
+                                'node', 14, 'uniform_rectilinear', 2 ) /)
 
       interface get_type_and_kind
            module procedure get_type_and_kind_scalar
@@ -520,31 +552,17 @@ contains
     class (bmi_sine), intent(in) :: this
     character (len=*), intent(in) :: name
     integer, intent(out) :: grid
-    integer :: bmi_status
+    integer :: bmi_status, n
 
-    select case(name)
-    case('sine2d')
-       grid = 2
-       bmi_status = BMI_SUCCESS
-    case('sine2d_ptr')
-       grid = 2
-       bmi_status = BMI_SUCCESS
-    case('sinevalue_tmp')
-       grid = 1
-       bmi_status = BMI_SUCCESS
-    case('logvar')
-       grid = 1
-       bmi_status = BMI_SUCCESS
-    case('int2d')
-       grid = 2
-       bmi_status = BMI_SUCCESS
-    case('double2d')
-       grid = 2
-       bmi_status = BMI_SUCCESS
-    case default
-       grid = 0
-       bmi_status = BMI_SUCCESS
-    end select
+    do n = 1, STATE_VAR_NAME_COUNT
+      if( var_info(n)%name == name ) then
+           grid = var_info(n)%grid
+           bmi_status = BMI_SUCCESS
+           return 
+      end if 
+    end do
+    grid = -1
+    bmi_status = BMI_FAILURE
   end function sine_var_grid
 
   ! The type of a variable's grid.
@@ -552,22 +570,17 @@ contains
     class (bmi_sine), intent(in) :: this
     integer, intent(in) :: grid
     character (len=*), intent(out) :: type
-    integer :: bmi_status
+    integer :: bmi_status, n
 
-    select case(grid)
-    case(0)
-       type = "scalar"
-       bmi_status = BMI_SUCCESS
-    case(1)
-       type = "1d"
-       bmi_status = BMI_SUCCESS
-    case(2)
-       type = "2d"
-       bmi_status = BMI_SUCCESS
-    case default
-       type = "-"
-       bmi_status = BMI_FAILURE
-    end select
+    do n = 1, STATE_VAR_NAME_COUNT
+      if( var_info(n)%grid == grid ) then
+           type = var_info(n)%gridtype
+           bmi_status = BMI_SUCCESS
+           return 
+      end if 
+    end do
+    type = '-' 
+    bmi_status = BMI_FAILURE
   end function sine_grid_type
 
   ! The number of dimensions of a grid.
@@ -575,22 +588,17 @@ contains
     class (bmi_sine), intent(in) :: this
     integer, intent(in) :: grid
     integer, intent(out) :: rank
-    integer :: bmi_status
+    integer :: bmi_status, n
 
-    select case(grid)
-    case(0)
-       rank = 0
-       bmi_status = BMI_SUCCESS
-    case(1)
-       rank = 1
-       bmi_status = BMI_SUCCESS
-    case(2)
-       rank = 2
-       bmi_status = BMI_SUCCESS
-    case default
-       rank = -1
-       bmi_status = BMI_FAILURE
-    end select
+    do n = 1, STATE_VAR_NAME_COUNT
+      if( var_info(n)%grid == grid ) then
+           rank = var_info(n)%gridrank
+           bmi_status = BMI_SUCCESS
+           return 
+      end if 
+    end do
+    rank = -1
+    bmi_status = BMI_FAILURE
   end function sine_grid_rank
 
   ! The dimensions of a grid.
@@ -602,9 +610,45 @@ contains
 
     select case(grid)
     case(1)
-       shape(:) = [this%model%n_x]
+       shape(:) = [1]
        bmi_status = BMI_SUCCESS
     case(2)
+       shape(:) = [1]
+       bmi_status = BMI_SUCCESS
+    case(3)
+       shape(:) = [1]
+       bmi_status = BMI_SUCCESS
+    case(4)
+       shape(:) = [1]
+       bmi_status = BMI_SUCCESS
+    case(5)
+       shape(:) = [1]
+       bmi_status = BMI_SUCCESS
+    case(6)
+       shape(:) = [1]
+       bmi_status = BMI_SUCCESS
+    case(7)
+       shape(:) = [1]
+       bmi_status = BMI_SUCCESS
+    case(8)
+       shape(:) = [this%model%n_x]
+       bmi_status = BMI_SUCCESS
+    case(9)
+       shape(:) = [this%model%n_y, this%model%n_x]
+       bmi_status = BMI_SUCCESS
+    case(10)
+       shape(:) = [this%model%n_y, this%model%n_x]
+       bmi_status = BMI_SUCCESS
+    case(11)
+       shape(:) = [1]
+       bmi_status = BMI_SUCCESS
+    case(12)
+       shape(:) = [this%model%n_y]
+       bmi_status = BMI_SUCCESS
+    case(13)
+       shape(:) = [this%model%n_y, this%model%n_x]
+       bmi_status = BMI_SUCCESS
+    case(14)
        shape(:) = [this%model%n_y, this%model%n_x]
        bmi_status = BMI_SUCCESS
     case default
@@ -625,9 +669,45 @@ contains
        size = 1
        bmi_status = BMI_SUCCESS
     case(1)
-       size = this%model%n_x
+       size = 1
        bmi_status = BMI_SUCCESS
     case(2)
+       size = 1
+       bmi_status = BMI_SUCCESS
+    case(3)
+       size = 1
+       bmi_status = BMI_SUCCESS
+    case(4)
+       size = 1
+       bmi_status = BMI_SUCCESS
+    case(5)
+       size = 1
+       bmi_status = BMI_SUCCESS
+    case(6)
+       size = 1
+       bmi_status = BMI_SUCCESS
+    case(7)
+       size = 1
+       bmi_status = BMI_SUCCESS
+    case(8)
+       size = this%model%n_x
+       bmi_status = BMI_SUCCESS
+    case(9)
+       size = this%model%n_x * this%model%n_y
+       bmi_status = BMI_SUCCESS
+    case(10)
+       size = this%model%n_x * this%model%n_y
+       bmi_status = BMI_SUCCESS
+    case(11)
+       size = 1
+       bmi_status = BMI_SUCCESS
+    case(12)
+       size = this%model%n_y
+       bmi_status = BMI_SUCCESS
+    case(13)
+       size = this%model%n_x * this%model%n_y
+       bmi_status = BMI_SUCCESS
+    case(14)
        size = this%model%n_x * this%model%n_y
        bmi_status = BMI_SUCCESS
     case default
@@ -644,11 +724,14 @@ contains
     integer :: bmi_status
 
     select case(grid)
-    case(1)
-       spacing(:) = [1]
+    case(1:7,11)
+       spacing(:) = [0.d0]
        bmi_status = BMI_SUCCESS
-    case(2)
-       spacing(:) = [1,1]
+    case(8,12)
+       spacing(:) = [1.d0]
+       bmi_status = BMI_SUCCESS
+    case(9:10,13:14)
+       spacing(:) = [1.d0, 1.d0]
        bmi_status = BMI_SUCCESS
     case default
        spacing(:) = -1.d0
@@ -664,10 +747,13 @@ contains
     integer :: bmi_status
 
     select case(grid)
-    case(1)
+    case(1:7,11)
        origin(:) = [0.d0]
        bmi_status = BMI_SUCCESS
-    case(2)
+    case(8,12)
+       origin(:) = [0.d0]
+       bmi_status = BMI_SUCCESS
+    case(9:10,13:14)
        origin(:) = [0.d0, 0.d0]
        bmi_status = BMI_SUCCESS
     case default
@@ -681,14 +767,24 @@ contains
     class (bmi_sine), intent(in) :: this
     integer, intent(in) :: grid
     double precision, dimension(:), intent(out) :: x
-    integer :: bmi_status
+    integer :: bmi_status, i
 
     select case(grid)
-    case(1)
+    case(1:7,11)
        x(:) = [0.d0]
        bmi_status = BMI_SUCCESS
-    case(2)
-       x(:) = [0.d0, 0.d0]
+    case(8)
+       do i = 1, this%model%n_x
+         x(i) = 1.d0 * ( i - 1 ) + 0.5d0 
+       end do
+       bmi_status = BMI_SUCCESS
+    case(12)
+       x(:) = [0.d0]
+       bmi_status = BMI_SUCCESS
+    case(9:10,13:14)
+       do i = 1, this%model%n_x
+         x(i) = 1.d0 * ( i -1 )  + 0.5d0
+       end do
        bmi_status = BMI_SUCCESS
     case default
        x(:) = -1.d0
@@ -701,14 +797,24 @@ contains
     class (bmi_sine), intent(in) :: this
     integer, intent(in) :: grid
     double precision, dimension(:), intent(out) :: y
-    integer :: bmi_status
+    integer :: bmi_status,j
 
     select case(grid)
-    case(1)
+    case(1:7,11)
        y(:) = [0.d0]
        bmi_status = BMI_SUCCESS
-    case(2)
-       y(:) = [0.d0, 0.d0]
+    case(8)
+       y(:) = [0.d0]
+       bmi_status = BMI_SUCCESS
+    case(12)
+       do j = 1, this%model%n_y
+         y(j) = 1.d0 * ( j - 1 ) + 0.5d0 
+       end do
+       bmi_status = BMI_SUCCESS
+    case(9:10,13:14)
+       do j = 1, this%model%n_y
+         y(j) = 1.d0 * ( j - 1 )  + 0.5d0
+       end do
        bmi_status = BMI_SUCCESS
     case default
        y(:) = -1.d0
@@ -724,10 +830,7 @@ contains
     integer :: bmi_status
 
     select case(grid)
-    case(1)
-       z(:) = [0.d0]
-       bmi_status = BMI_SUCCESS
-    case(2)
+    case(1:14)
        z(:) = [0.d0]
        bmi_status = BMI_SUCCESS
     case default
@@ -743,9 +846,8 @@ contains
     integer, intent(out) :: count
     integer :: bmi_status
 
+    ! there is no unstructured grid in the model
     select case(grid)
-    case(1:2)
-       bmi_status = this%get_grid_size(grid, count)
     case default
        count = -1
        bmi_status = BMI_FAILURE
@@ -759,6 +861,7 @@ contains
     integer, intent(out) :: count
     integer :: bmi_status
 
+    ! there is no unstructured grid in the model
     count = -1
     bmi_status = BMI_FAILURE
   end function sine_grid_edge_count
@@ -770,6 +873,7 @@ contains
     integer, intent(out) :: count
     integer :: bmi_status
 
+    ! there is no unstructured grid in the model
     count = -1
     bmi_status = BMI_FAILURE
   end function sine_grid_face_count
@@ -781,6 +885,7 @@ contains
     integer, dimension(:), intent(out) :: edge_nodes
     integer :: bmi_status
 
+    ! there is no unstructured grid in the model
     edge_nodes(:) = -1
     bmi_status = BMI_FAILURE
   end function sine_grid_edge_nodes
@@ -792,6 +897,7 @@ contains
     integer, dimension(:), intent(out) :: face_edges
     integer :: bmi_status
 
+    ! not available, there is no unstructured grid in the model
     face_edges(:) = -1
     bmi_status = BMI_FAILURE
   end function sine_grid_face_edges
@@ -803,6 +909,7 @@ contains
     integer, dimension(:), intent(out) :: face_nodes
     integer :: bmi_status
 
+    ! not available, there is no unstructured grid in the model
     face_nodes(:) = -1
     bmi_status = BMI_FAILURE
   end function sine_grid_face_nodes
@@ -814,6 +921,7 @@ contains
     integer, dimension(:), intent(out) :: nodes_per_face
     integer :: bmi_status
 
+    ! not available, there is no unstructured grid in the model
     nodes_per_face(:) = -1
     bmi_status = BMI_FAILURE
   end function sine_grid_nodes_per_face
@@ -1296,6 +1404,32 @@ contains
     integer, intent(in) :: inds(:)
     integer :: bmi_status
     type (c_ptr) src
+    integer, allocatable  :: src_flattened(:)
+    integer :: i, n_elements
+
+    select case(name)
+    case("int2d")
+      n_elements = size( inds )
+      allocate( src_flattened ( size( this%model%int2d) ) )
+      src_flattened = reshape(this%model%int2d, [size(this%model%int2d)])
+      do i = 1, n_elements
+         dest( i ) = src_flattened( inds(i) )
+      end do
+      deallocate( src_flattened )
+      bmi_status = BMI_SUCCESS
+    case default
+      bmi_status = BMI_FAILURE
+    end select
+  end function sine_get_at_indices_int
+
+  function sine_get_at_indices_int1(this, name, dest, inds) &
+       result (bmi_status)
+    class (bmi_sine), intent(in) :: this
+    character (len=*), intent(in) :: name
+    integer(kind=1), intent(inout) :: dest(:)
+    integer, intent(in) :: inds(:)
+    integer :: bmi_status
+    type (c_ptr) src
     integer, pointer :: src_flattened(:)
     integer :: i, n_elements
 
@@ -1303,7 +1437,81 @@ contains
     case default
        bmi_status = BMI_FAILURE
     end select
-  end function sine_get_at_indices_int
+  end function sine_get_at_indices_int1
+
+  function sine_get_at_indices_int2(this, name, dest, inds) &
+       result (bmi_status)
+    class (bmi_sine), intent(in) :: this
+    character (len=*), intent(in) :: name
+    integer(kind=2), intent(inout) :: dest(:)
+    integer, intent(in) :: inds(:)
+    integer :: bmi_status
+    type (c_ptr) src
+    integer, pointer :: src_flattened(:)
+    integer :: i, n_elements
+
+    select case(name)
+    case default
+       bmi_status = BMI_FAILURE
+    end select
+  end function sine_get_at_indices_int2
+
+  function sine_get_at_indices_int8(this, name, dest, inds) &
+       result (bmi_status)
+    class (bmi_sine), intent(in) :: this
+    character (len=*), intent(in) :: name
+    integer(kind=8), intent(inout) :: dest(:)
+    integer, intent(in) :: inds(:)
+    integer :: bmi_status
+    type (c_ptr) src
+    integer, pointer :: src_flattened(:)
+    integer :: i, n_elements
+
+    select case(name)
+    case default
+       bmi_status = BMI_FAILURE
+    end select
+  end function sine_get_at_indices_int8
+
+  function sine_get_at_indices_logical(this, name, dest, inds) &
+       result (bmi_status)
+    class (bmi_sine), intent(in) :: this
+    character (len=*), intent(in) :: name
+    logical, intent(inout) :: dest(:)
+    integer, intent(in) :: inds(:)
+    integer :: bmi_status
+    type (c_ptr) src
+    integer, pointer :: src_flattened(:)
+    integer :: i, n_elements
+
+    select case(name)
+    case("logvar")
+       n_elements = size( inds )
+       do i = 1, n_elements
+         dest(i) = this%model%logvar( inds(i) )
+       end do
+       bmi_status = BMI_SUCCESS
+    case default
+       bmi_status = BMI_FAILURE
+    end select
+  end function sine_get_at_indices_logical
+
+  function sine_get_at_indices_string(this, name, dest, inds) &
+       result (bmi_status)
+    class (bmi_sine), intent(in) :: this
+    character (len=*), intent(in) :: name
+    character(len=*), intent(inout) :: dest
+    integer, intent(in) :: inds(:)
+    integer :: bmi_status
+    type (c_ptr) src
+    integer, pointer :: src_flattened(:)
+    integer :: i, n_elements
+
+    select case(name)
+    case default
+       bmi_status = BMI_FAILURE
+    end select
+  end function sine_get_at_indices_string
 
   ! Get values of a real variable at the given locations.
   function sine_get_at_indices_float(this, name, dest, inds) &
@@ -1314,10 +1522,19 @@ contains
     integer, intent(in) :: inds(:)
     integer :: bmi_status
     type (c_ptr) src
-    real, pointer :: src_flattened(:)
+    real, allocatable  :: src_flattened(:)
     integer :: i, n_elements
 
     select case(name)
+    case("sine2d")
+      n_elements = size( inds )
+      allocate( src_flattened ( size( this%model%sine2d) ) )
+      src_flattened = reshape(this%model%sine2d, [size(this%model%sine2d)])
+      do i = 1, n_elements
+         dest( i ) = src_flattened( inds(i) )
+      end do
+      deallocate( src_flattened )
+      bmi_status = BMI_SUCCESS
     case default
        bmi_status = BMI_FAILURE
     end select
@@ -1332,10 +1549,34 @@ contains
     integer, intent(in) :: inds(:)
     integer :: bmi_status
     type (c_ptr) src
-    double precision, pointer :: src_flattened(:)
+    double precision, allocatable :: src_flattened(:)
     integer :: i, n_elements
 
     select case(name)
+    case("sine2d_ptr")
+      n_elements = size( inds )
+      allocate( src_flattened ( size( this%model%sine2d_ptr) ) )
+      src_flattened = reshape(this%model%sine2d_ptr, [size(this%model%sine2d_ptr)])
+      do i = 1, n_elements
+         dest( i ) = src_flattened( inds(i) )
+      end do
+      deallocate( src_flattened )
+      bmi_status = BMI_SUCCESS
+    case("double2d")
+      n_elements = size( inds )
+      allocate( src_flattened ( size( this%model%double2d) ) )
+      src_flattened = reshape(this%model%double2d, [size(this%model%double2d)])
+      do i = 1, n_elements
+         dest( i ) = src_flattened( inds(i) )
+      end do
+      deallocate( src_flattened )
+      bmi_status = BMI_SUCCESS
+    case("sinevalue_tmp")
+       n_elements = size( inds )
+       do i = 1, n_elements
+         dest(i) = this%model%sinevalue_tmp( inds(i) )
+       end do
+       bmi_status = BMI_SUCCESS
     case default
        bmi_status = BMI_FAILURE
     end select
@@ -1488,7 +1729,7 @@ contains
   ! Set integer values at particular locations.
   function sine_set_at_indices_int(this, name, inds, src) &
        result (bmi_status)
-    class (bmi_sine), intent(inout) :: this
+    class (bmi_sine), intent(inout), target :: this
     character (len=*), intent(in) :: name
     integer, intent(in) :: inds(:)
     integer, intent(in) :: src(:)
@@ -1498,15 +1739,117 @@ contains
     integer :: i
 
     select case(name)
+    case("int2d")
+       dest = c_loc(this%model%int2d(1,1))
+       call c_f_pointer(dest, dest_flattened, [this%model%n_y * this%model%n_x])
+       do i = 1, size(inds)
+          dest_flattened(inds(i)) = src(i)
+       end do
+       bmi_status = BMI_SUCCESS
     case default
        bmi_status = BMI_FAILURE
     end select
   end function sine_set_at_indices_int
 
+  ! Set integer values at particular locations.
+  function sine_set_at_indices_int1(this, name, inds, src) &
+       result (bmi_status)
+    class (bmi_sine), intent(inout), target :: this
+    character (len=*), intent(in) :: name
+    integer, intent(in) :: inds(:)
+    integer(kind=1), intent(in) :: src(:)
+    integer :: bmi_status
+    type (c_ptr) dest
+    integer, pointer :: dest_flattened(:)
+    integer :: i
+
+    select case(name)
+    case default
+       bmi_status = BMI_FAILURE
+    end select
+  end function sine_set_at_indices_int1
+
+  ! Set integer values at particular locations.
+  function sine_set_at_indices_int2(this, name, inds, src) &
+       result (bmi_status)
+    class (bmi_sine), intent(inout), target :: this
+    character (len=*), intent(in) :: name
+    integer, intent(in) :: inds(:)
+    integer(kind=2), intent(in) :: src(:)
+    integer :: bmi_status
+    type (c_ptr) dest
+    integer, pointer :: dest_flattened(:)
+    integer :: i
+
+    select case(name)
+    case default
+       bmi_status = BMI_FAILURE
+    end select
+  end function sine_set_at_indices_int2
+
+  ! Set integer values at particular locations.
+  function sine_set_at_indices_int8(this, name, inds, src) &
+       result (bmi_status)
+    class (bmi_sine), intent(inout), target :: this
+    character (len=*), intent(in) :: name
+    integer, intent(in) :: inds(:)
+    integer(kind=8), intent(in) :: src(:)
+    integer :: bmi_status
+    type (c_ptr) dest
+    integer, pointer :: dest_flattened(:)
+    integer :: i
+
+    select case(name)
+    case default
+       bmi_status = BMI_FAILURE
+    end select
+  end function sine_set_at_indices_int8
+
+  ! Set logical values at particular locations.
+  function sine_set_at_indices_logical(this, name, inds, src) &
+       result (bmi_status)
+    class (bmi_sine), intent(inout), target :: this
+    character (len=*), intent(in) :: name
+    integer, intent(in) :: inds(:)
+    logical, intent(in) :: src(:)
+    integer :: bmi_status
+    type (c_ptr) dest
+    integer, pointer :: dest_flattened(:)
+    integer :: i
+
+    select case(name)
+    case("logvar")
+       do i = 1, size( inds )
+         this%model%logvar( inds(i) ) = src(i)
+       end do
+       bmi_status = BMI_SUCCESS
+    case default
+       bmi_status = BMI_FAILURE
+    end select
+  end function sine_set_at_indices_logical
+
+  ! Set string values at particular locations.
+  function sine_set_at_indices_string(this, name, inds, src) &
+       result (bmi_status)
+    class (bmi_sine), intent(inout), target :: this
+    character (len=*), intent(in) :: name
+    integer, intent(in) :: inds(:)
+    character (len=*), intent(in) :: src
+    integer :: bmi_status
+    type (c_ptr) dest
+    integer, pointer :: dest_flattened(:)
+    integer :: i
+
+    select case(name)
+    case default
+       bmi_status = BMI_FAILURE
+    end select
+  end function sine_set_at_indices_string
+
   ! Set real values at particular locations.
   function sine_set_at_indices_float(this, name, inds, src) &
        result (bmi_status)
-    class (bmi_sine), intent(inout) :: this
+    class (bmi_sine), intent(inout), target :: this
     character (len=*), intent(in) :: name
     integer, intent(in) :: inds(:)
     real, intent(in) :: src(:)
@@ -1516,6 +1859,13 @@ contains
     integer :: i
 
     select case(name)
+    case("sine2d")
+       dest = c_loc(this%model%sine2d(1,1))
+       call c_f_pointer(dest, dest_flattened, [this%model%n_y * this%model%n_x])
+       do i = 1, size(inds)
+          dest_flattened(inds(i)) = src(i)
+       end do
+       bmi_status = BMI_SUCCESS
     case default
        bmi_status = BMI_FAILURE
     end select
@@ -1524,7 +1874,7 @@ contains
   ! Set double values at particular locations.
   function sine_set_at_indices_double(this, name, inds, src) &
        result (bmi_status)
-    class (bmi_sine), intent(inout) :: this
+    class (bmi_sine), intent(inout), target :: this
     character (len=*), intent(in) :: name
     integer, intent(in) :: inds(:)
     double precision, intent(in) :: src(:)
@@ -1534,6 +1884,25 @@ contains
     integer :: i
 
     select case(name)
+    case("sine2d_ptr")
+       dest = c_loc(this%model%sine2d_ptr(1,1))
+       call c_f_pointer(dest, dest_flattened, [this%model%n_y * this%model%n_x])
+       do i = 1, size(inds)
+          dest_flattened(inds(i)) = src(i)
+       end do
+       bmi_status = BMI_SUCCESS
+    case("double2d")
+       dest = c_loc(this%model%double2d(1,1))
+       call c_f_pointer(dest, dest_flattened, [this%model%n_y * this%model%n_x])
+       do i = 1, size(inds)
+          dest_flattened(inds(i)) = src(i)
+       end do
+       bmi_status = BMI_SUCCESS
+    case("sinevalue_tmp")
+       do i = 1, size( inds )
+         this%model%sinevalue_tmp( inds(i) ) = src(i)
+       end do
+       bmi_status = BMI_SUCCESS
     case default
        bmi_status = BMI_FAILURE
     end select
