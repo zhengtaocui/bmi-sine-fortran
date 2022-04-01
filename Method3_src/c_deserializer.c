@@ -55,6 +55,8 @@ int c_deserialize_states(void* box_handle, const char* ser_file )
     char** names = NULL; //variable names from Fortran
     char** cnames = NULL;//copy of variables from Fortran
 
+    int verbose = 1;
+
     //-------------------------------------
     // Get the file size; set buffer_size
     //-------------------------------------
@@ -79,8 +81,10 @@ int c_deserialize_states(void* box_handle, const char* ser_file )
 
     //get the total variable count
     status = get_var_count(box_handle, role, &var_count);
-//    printf("In c_deserialize_states: role=%s, count=%d\n", role, var_count);
-
+    if ( verbose )
+    {
+      printf("In c_deserialize_states: role=%s, count=%d\n", role, var_count);
+    }
     names = malloc( sizeof(char*));
     cnames = malloc( var_count * sizeof(char*));
     /*Now the get_var_names copies the names to the given array of strings
@@ -110,10 +114,16 @@ int c_deserialize_states(void* box_handle, const char* ser_file )
 
       //get the variable length
       status = get_var_length(box_handle, cnames[i], &var_length);
-//      printf( "names[ %d ] = %s, length = %d \n", i, cnames[i], var_length );
+      if ( verbose )
+      {
+         printf( "names[ %d ] = %s, length = %d \n", i, cnames[i], var_length );
+      }
       //get the variable data type
       status = get_var_type(box_handle, cnames[i], type);
-//      printf( "names[ %d ] = %s, type = %s \n", i, cnames[i], type );
+      if ( verbose )
+      {
+         printf( "names[ %d ] = %s, type = %s \n", i, cnames[i], type );
+      }
       if ( strcmp(type, "integer4" ) == 0 )
       {
           //store values in a 1D array
@@ -123,7 +133,10 @@ int c_deserialize_states(void* box_handle, const char* ser_file )
               //deserialize the array element from the file
               ret = msgpack_unpack_next(&unpacked, inbuffer, len, &off);
 	      inttemp[j] = (int)(unpacked.data.via.i64); 
-//              printf("       %s[%d] = %d \n", cnames[i], j, inttemp[j] );
+              if ( verbose )
+              {
+                 printf("       %s[%d] = %d \n", cnames[i], j, inttemp[j] );
+              }
 	  }
 	  //populate the restored states to the model object 
 	  set_value_int(box_handle, cnames[i], inttemp);
@@ -139,7 +152,10 @@ int c_deserialize_states(void* box_handle, const char* ser_file )
               //deserialize the array element from the file
               ret = msgpack_unpack_next(&unpacked, inbuffer, len, &off);
 	      int1temp[j] = (int8_t)(unpacked.data.via.i64);
-//              printf("       %s[%d] = %d \n", cnames[i], j, int1temp[j] );
+              if ( verbose )
+              {
+                 printf("       %s[%d] = %d \n", cnames[i], j, int1temp[j] );
+              }
 	  }
 	  //populate the restored states to the model object 
 	  set_value_int1(box_handle, cnames[i], int1temp);
@@ -155,7 +171,10 @@ int c_deserialize_states(void* box_handle, const char* ser_file )
               //deserialize the array element from the file
               ret = msgpack_unpack_next(&unpacked, inbuffer, len, &off);
 	      shorttemp[j] = (short)(unpacked.data.via.i64);
-//              printf("       %s[%d] = %d \n", cnames[i], j, shorttemp[j] );
+              if ( verbose )
+              {
+                 printf("       %s[%d] = %d \n", cnames[i], j, shorttemp[j] );
+              }
 	  }
 	  //populate the restored states to the model object 
 	  set_value_int2(box_handle, cnames[i], shorttemp);
@@ -171,7 +190,10 @@ int c_deserialize_states(void* box_handle, const char* ser_file )
               //deserialize the array element from the file
               ret = msgpack_unpack_next(&unpacked, inbuffer, len, &off);
 	      longtemp[j] = (long)(unpacked.data.via.i64);
-//              printf("       %s[%d] = %d \n", cnames[i], j, longtemp[j] );
+              if ( verbose )
+              {
+                 printf("       %s[%d] = %d \n", cnames[i], j, longtemp[j] );
+              }
 	  }
 	  //populate the restored states to the model object 
 	  set_value_int8(box_handle, cnames[i], longtemp);
@@ -187,7 +209,10 @@ int c_deserialize_states(void* box_handle, const char* ser_file )
               //deserialize the array element from the file
               ret = msgpack_unpack_next(&unpacked, inbuffer, len, &off);
               floattemp[j] = (float)(unpacked.data.via.f64);
-//              printf("       %s[%d] = %f \n", cnames[i], j, floattemp[j] );
+              if ( verbose )
+              {
+                 printf("       %s[%d] = %f \n", cnames[i], j, floattemp[j] );
+              }
 	  }
 	  //populate the restored states to the model object 
 	  set_value_float(box_handle, cnames[i], floattemp);
@@ -203,7 +228,10 @@ int c_deserialize_states(void* box_handle, const char* ser_file )
               //deserialize the array element from the file
               ret = msgpack_unpack_next(&unpacked, inbuffer, len, &off);
               doubletemp[j] = (double)(unpacked.data.via.f64);
-//              printf("       %s[%d] = %f \n", cnames[i], j, doubletemp[j] );
+              if ( verbose )
+              {
+                 printf("       %s[%d] = %f \n", cnames[i], j, doubletemp[j] );
+              }
 	  }
 	  //populate the restored states to the model object 
 	  set_value_double(box_handle, cnames[i], doubletemp);
@@ -219,7 +247,10 @@ int c_deserialize_states(void* box_handle, const char* ser_file )
               //deserialize the array element from the file
               ret = msgpack_unpack_next(&unpacked, inbuffer, len, &off);
 	      booltemp[j] = (bool)(unpacked.data.via.i64); 
-//              printf("       %s[%d] = %d \n", cnames[i], j, booltemp[j] );
+              if ( verbose )
+              {
+                 printf("       %s[%d] = %d \n", cnames[i], j, booltemp[j] );
+              }
 	  }
 	  //populate the restored states to the model object 
 	  set_value_logical(box_handle, cnames[i], booltemp);
@@ -235,7 +266,10 @@ int c_deserialize_states(void* box_handle, const char* ser_file )
           strcpy(temp, (char*)unpacked.data.via.array.ptr );
 	  //set the null character to mark the end of the C string
 	  temp[ var_length - 1] = '\0';
-          printf("       %s = %s \n", cnames[i], temp );
+          if ( verbose )
+          {
+             printf("       %s = %s \n", cnames[i], temp );
+          }
           //restore the value to the model
 	  set_value_string(box_handle, cnames[i], temp);
 	  //cleaning up

@@ -609,47 +609,17 @@ contains
     integer :: bmi_status
 
     select case(grid)
-    case(1)
-       shape(:) = [1]
-       bmi_status = BMI_SUCCESS
-    case(2)
-       shape(:) = [1]
-       bmi_status = BMI_SUCCESS
-    case(3)
-       shape(:) = [1]
-       bmi_status = BMI_SUCCESS
-    case(4)
-       shape(:) = [1]
-       bmi_status = BMI_SUCCESS
-    case(5)
-       shape(:) = [1]
-       bmi_status = BMI_SUCCESS
-    case(6)
-       shape(:) = [1]
-       bmi_status = BMI_SUCCESS
-    case(7)
+    case(0:7,11)
        shape(:) = [1]
        bmi_status = BMI_SUCCESS
     case(8)
        shape(:) = [this%model%n_x]
        bmi_status = BMI_SUCCESS
-    case(9)
+    case(9:10,13:14)
        shape(:) = [this%model%n_y, this%model%n_x]
-       bmi_status = BMI_SUCCESS
-    case(10)
-       shape(:) = [this%model%n_y, this%model%n_x]
-       bmi_status = BMI_SUCCESS
-    case(11)
-       shape(:) = [1]
        bmi_status = BMI_SUCCESS
     case(12)
        shape(:) = [this%model%n_y]
-       bmi_status = BMI_SUCCESS
-    case(13)
-       shape(:) = [this%model%n_y, this%model%n_x]
-       bmi_status = BMI_SUCCESS
-    case(14)
-       shape(:) = [this%model%n_y, this%model%n_x]
        bmi_status = BMI_SUCCESS
     case default
        shape(:) = -1
@@ -665,50 +635,17 @@ contains
     integer :: bmi_status
 
     select case(grid)
-    case(0)
-       size = 1
-       bmi_status = BMI_SUCCESS
-    case(1)
-       size = 1
-       bmi_status = BMI_SUCCESS
-    case(2)
-       size = 1
-       bmi_status = BMI_SUCCESS
-    case(3)
-       size = 1
-       bmi_status = BMI_SUCCESS
-    case(4)
-       size = 1
-       bmi_status = BMI_SUCCESS
-    case(5)
-       size = 1
-       bmi_status = BMI_SUCCESS
-    case(6)
-       size = 1
-       bmi_status = BMI_SUCCESS
-    case(7)
+    case(0:7, 11)
        size = 1
        bmi_status = BMI_SUCCESS
     case(8)
        size = this%model%n_x
        bmi_status = BMI_SUCCESS
-    case(9)
+    case(9:10,13:14)
        size = this%model%n_x * this%model%n_y
-       bmi_status = BMI_SUCCESS
-    case(10)
-       size = this%model%n_x * this%model%n_y
-       bmi_status = BMI_SUCCESS
-    case(11)
-       size = 1
        bmi_status = BMI_SUCCESS
     case(12)
        size = this%model%n_y
-       bmi_status = BMI_SUCCESS
-    case(13)
-       size = this%model%n_x * this%model%n_y
-       bmi_status = BMI_SUCCESS
-    case(14)
-       size = this%model%n_x * this%model%n_y
        bmi_status = BMI_SUCCESS
     case default
        size = -1
@@ -724,7 +661,7 @@ contains
     integer :: bmi_status
 
     select case(grid)
-    case(1:7,11)
+    case(0:7,11)
        spacing(:) = [0.d0]
        bmi_status = BMI_SUCCESS
     case(8,12)
@@ -747,7 +684,7 @@ contains
     integer :: bmi_status
 
     select case(grid)
-    case(1:7,11)
+    case(0:7,11)
        origin(:) = [0.d0]
        bmi_status = BMI_SUCCESS
     case(8,12)
@@ -770,7 +707,7 @@ contains
     integer :: bmi_status, i
 
     select case(grid)
-    case(1:7,11)
+    case(0:7,11)
        x(:) = [0.d0]
        bmi_status = BMI_SUCCESS
     case(8)
@@ -800,7 +737,7 @@ contains
     integer :: bmi_status,j
 
     select case(grid)
-    case(1:7,11)
+    case(0:7,11)
        y(:) = [0.d0]
        bmi_status = BMI_SUCCESS
     case(8)
@@ -830,7 +767,7 @@ contains
     integer :: bmi_status
 
     select case(grid)
-    case(1:14)
+    case(0:14)
        z(:) = [0.d0]
        bmi_status = BMI_SUCCESS
     case default
